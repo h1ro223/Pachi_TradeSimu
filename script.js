@@ -222,7 +222,8 @@ const LS_DRAFT = 'kankin_form_draft_v1';
 const DRAFT_TTL_MS = 24 * 60 * 60 * 1000; // 下書きの保存期間（24時間）
 
 // みんパチ
-const LS_TIP = 'kankin_compass_tip_seen_v1'; // コンパス案内を見たか
+const LS_TIP = 'kankin_compass_tip_snooze_v2'; // コンパス案内を「7日間表示しない」にした日時
+const TIP_SNOOZE_MS = 7 * 24 * 60 * 60 * 1000;
 const LS_A2HS = 'kankin_a2hs_dismissed_v1';   // ホーム画面追加のおすすめを閉じた日時
 const A2HS_SNOOZE_MS = 14 * 24 * 60 * 60 * 1000; // 閉じたら14日間は出さない
 const EXPORT_APP = 'kankin-calculator';
@@ -260,6 +261,7 @@ const animToggle = $('animToggle');
 const tipModal = $('tipModal');
 const tipOpen = $('tipOpen');
 const tipCancel = $('tipCancel');
+const tipSnooze = $('tipSnooze');
 const tipVisual = $('tipVisual');
 const storeLink = $('storeLink');
 const tabIndicator = document.createElement('span');
@@ -879,17 +881,19 @@ function isStandalone() {
   }
 }
 
-function tipSeen() {
+// 「7日間表示しない」の期間中か
+function tipSnoozed() {
   try {
-    return localStorage.getItem(LS_TIP) === '1';
+    const t = parseInt(localStorage.getItem(LS_TIP) || '0', 10);
+    return t > 0 && t <= Date.now() + 60000 && Date.now() - t < TIP_SNOOZE_MS;
   } catch (e) {
-    return true; // 保存できない環境では毎回出さない
+    return false;
   }
 }
 
-function markTipSeen() {
+function snoozeTip() {
   try {
-    localStorage.setItem(LS_TIP, '1');
+    localStorage.setItem(LS_TIP, String(Date.now()));
   } catch (e) { /* 何もしない */ }
 }
 
@@ -956,7 +960,8 @@ function renderA2hsSetting() {
 
 function onMinpachiClick(e) {
   saveDraft(); // 画面が切り替わっても続きから入力できるように
-  if (!isStandalone() || tipSeen()) return; // 通常はそのまま開く
+  if (!isStandalone() || tipSnoozed()) return; // 通常はそのまま開く
+  tipSnooze.checked = false; // チェックは毎回オフから
   e.preventDefault();
   // 案内の「みんパチを開く」は、押したリンクと同じページを開く
   tipOpen.href = (e.currentTarget && e.currentTarget.href) || 'https://minpachi.com/';
@@ -1902,7 +1907,8 @@ settingsBtn.addEventListener('click', openSettings);
 settingsClose.addEventListener('click', function () { closeModal(settingsModal); });
 // コンパス案内：「みんパチを開く」はリンクそのものなので、そのまま開く
 tipOpen.addEventListener('click', function () {
-  markTipSeen();
+  // チェックを入れて開いた時だけ7日間出さない（キャンセルでは記録しない）
+  if (tipSnooze.checked) snoozeTip();
   saveDraft();
   closeModal(tipModal);
 });

@@ -1303,6 +1303,30 @@ body.is-standalone .standalone-only {
   text-align: center;
 }
 
+/* 「7日間表示しない」チェック */
+.tip-check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 6px 0;
+  font-size: 13px;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.tip-check input {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--gold);
+  cursor: pointer;
+}
+
+.tip-check input:checked + span {
+  color: var(--text);
+}
+
 /* 実際のスクショ（Guide2.png）。無い時は下の図で代用 */
 .tip-img {
   display: none;
