@@ -152,6 +152,8 @@ const animToggle = $('animToggle');
 const tipModal = $('tipModal');
 const tipOpen = $('tipOpen');
 const tipCancel = $('tipCancel');
+const tipVisual = $('tipVisual');
+const tipImg = $('tipImg');
 
 const exportBtn = $('exportBtn');
 const importBtn = $('importBtn');
@@ -1357,6 +1359,10 @@ tipOpen.addEventListener('click', function () {
 });
 tipCancel.addEventListener('click', function () { closeModal(tipModal); });
 
+// Guide2.png が無い時は手描きの図に切り替え
+tipImg.addEventListener('error', function () { tipVisual.classList.remove('has-img'); });
+tipImg.addEventListener('load', function () { tipVisual.classList.add('has-img'); });
+
 // みんパチのリンク（1ページ目・2ページ目）
 const minpachiLinks = document.querySelectorAll('.minpachi-link');
 for (let i = 0; i < minpachiLinks.length; i++) {
@@ -1464,6 +1470,7 @@ if (guideImg.complete) {
   else showGuideImage();
 }
 renderAll();      // 起動時は保存済みの枚数でアニメなし表示
+if (tipImg.complete && tipImg.naturalWidth === 0) tipVisual.classList.remove('has-img');
 if (isStandalone()) document.body.classList.add('is-standalone');
 renderBadge();
 renderSettings();

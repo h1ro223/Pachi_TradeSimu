@@ -910,6 +910,29 @@ body.is-standalone .standalone-only {
   text-align: center;
 }
 
+/* 実際のスクショ（Guide2.png）。無い時は下の図で代用 */
+.tip-img {
+  display: none;
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+}
+
+.tip-visual.has-img {
+  padding: 0;
+  background: none;
+  border: none;
+}
+
+.tip-visual.has-img .tip-img {
+  display: block;
+}
+
+.tip-visual.has-img .tip-pill {
+  display: none;
+}
+
 /* Safariの下部ツールバーを模した図 */
 .tip-visual {
   display: flex;
