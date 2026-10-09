@@ -129,6 +129,194 @@ h1 {
   display: none;
 }
 
+/* ===== ホーム画面に追加のおすすめバナー ===== */
+.a2hs-banner {
+  width: 100%;
+  max-width: 440px;
+  margin: 8px auto 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 6px 8px 10px;
+  background: linear-gradient(90deg, rgba(255, 79, 154, 0.18), rgba(69, 227, 255, 0.12));
+  border: 1px solid rgba(255, 79, 154, 0.45);
+  border-radius: 14px;
+  animation: sheetUp 0.3s ease-out;
+}
+
+.a2hs-banner.hidden {
+  display: none;
+}
+
+.a2hs-ico {
+  flex-shrink: 0;
+  font-size: 20px;
+}
+
+.a2hs-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.a2hs-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.a2hs-sub {
+  margin: 1px 0 0;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.a2hs-btn {
+  flex-shrink: 0;
+  padding: 7px 12px;
+  font-size: 13px;
+}
+
+.a2hs-close {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  font-size: 18px;
+  line-height: 1;
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.a2hs-close:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+/* ===== ホーム画面に追加のしかた ===== */
+.a2hs-merits {
+  margin: 0 0 14px;
+  padding: 12px 12px 12px 30px;
+  font-size: 13px;
+  line-height: 1.8;
+  background: rgba(255, 205, 60, 0.07);
+  border: 1px solid rgba(255, 205, 60, 0.3);
+  border-radius: 14px;
+}
+
+.a2hs-merits li::marker {
+  color: var(--gold);
+}
+
+.a2hs-install {
+  margin-bottom: 14px;
+}
+
+.a2hs-install.hidden,
+.a2hs-section.hidden,
+.a2hs-done.hidden,
+.a2hs-pc.hidden,
+.a2hs-warn.hidden {
+  display: none;
+}
+
+.a2hs-section {
+  margin-bottom: 14px;
+}
+
+.a2hs-head {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--cyan);
+}
+
+.a2hs-steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.a2hs-steps li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  font-size: 13px;
+  line-height: 1.7;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.a2hs-steps .num {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  margin-top: 1px;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 24px;
+  text-align: center;
+  color: #1a1305;
+  background: var(--gold);
+  border-radius: 50%;
+}
+
+.a2hs-steps strong {
+  color: var(--gold);
+}
+
+.inline-ico {
+  width: 18px;
+  height: 18px;
+  margin: 0 2px;
+  vertical-align: -4px;
+  color: var(--cyan);
+}
+
+.a2hs-warn {
+  margin-top: 10px;
+  padding: 12px;
+  font-size: 12px;
+  line-height: 1.7;
+  background: rgba(255, 107, 125, 0.08);
+  border: 1px solid rgba(255, 107, 125, 0.35);
+  border-radius: 12px;
+}
+
+.a2hs-warn p {
+  margin: 0 0 8px;
+}
+
+.a2hs-warn strong {
+  color: var(--red);
+}
+
+.a2hs-done {
+  margin: 0 0 12px;
+  padding: 14px;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--gold);
+  background: rgba(255, 205, 60, 0.08);
+  border: 1px solid rgba(255, 205, 60, 0.35);
+  border-radius: 14px;
+}
+
+.a2hs-pc {
+  margin: 0 0 10px;
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
+}
+
 /* ===== レイアウト ===== */
 main {
   width: 100%;

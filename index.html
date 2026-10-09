@@ -9,6 +9,7 @@
 <link rel="icon" href="./favicon.svg" type="image/svg+xml">
 <link rel="icon" href="./favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<link rel="manifest" href="./manifest.webmanifest">
 <title>換金計算ツール</title>
 <link rel="stylesheet" href="./style.css">
 </head>
@@ -29,6 +30,17 @@
     </button>
   </div>
 </header>
+
+<!-- ホーム画面に追加のおすすめ（スマホのブラウザで開いている時だけ） -->
+<div id="a2hsBanner" class="a2hs-banner hidden" role="region" aria-label="ホーム画面に追加のおすすめ">
+  <span class="a2hs-ico" aria-hidden="true">📲</span>
+  <div class="a2hs-body">
+    <p class="a2hs-title">ホーム画面に追加がおすすめです</p>
+    <p class="a2hs-sub">アプリのように全画面ですぐ使えます</p>
+  </div>
+  <button type="button" id="a2hsHow" class="btn btn-primary a2hs-btn">方法</button>
+  <button type="button" id="a2hsClose" class="a2hs-close" aria-label="閉じる">×</button>
+</div>
 
 <main>
 
@@ -105,6 +117,14 @@
       <button type="button" id="animToggle" class="switch" role="switch" aria-checked="true" aria-label="カウントアニメ">
         <span class="switch-knob"></span>
       </button>
+    </div>
+
+    <div class="setting-item">
+      <div class="setting-text">
+        <p class="setting-name">ホーム画面に追加</p>
+        <p class="setting-desc" id="a2hsSettingDesc">アイコンからワンタップで、アプリのように使えます</p>
+      </div>
+      <button type="button" id="a2hsSettingBtn" class="btn btn-ghost btn-sm">方法を見る</button>
     </div>
 
     <div class="setting-item column">
@@ -238,6 +258,57 @@
     <div class="sheet-actions">
       <button type="button" id="tipCancel" class="btn btn-ghost">キャンセル</button>
       <a id="tipOpen" class="btn btn-primary" href="https://minpachi.com/" target="_blank" rel="noopener">みんパチを開く</a>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ホーム画面に追加のしかた ===== -->
+<div id="a2hsModal" class="modal hidden" aria-hidden="true">
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="a2hsTitle">
+    <div class="sheet-head">
+      <h2 id="a2hsTitle">ホーム画面に追加</h2>
+    </div>
+
+    <p id="a2hsDone" class="a2hs-done hidden">✓ いまホーム画面から開いています。追加は完了しています！</p>
+
+    <div id="a2hsMain">
+      <ul class="a2hs-merits">
+        <li>アイコンからワンタップで起動</li>
+        <li>アドレスバーのない全画面で見やすい</li>
+        <li>Safariのタブに埋もれず、すぐ見つかる</li>
+      </ul>
+
+      <button type="button" id="a2hsInstall" class="btn btn-primary btn-block a2hs-install hidden">ホーム画面に追加する</button>
+
+      <!-- iPhone -->
+      <section id="a2hsIOS" class="a2hs-section">
+        <p class="a2hs-head">iPhone（Safari）</p>
+        <ol class="a2hs-steps">
+          <li><span class="num">1</span><span>画面の下にある<strong>共有ボタン</strong><svg class="inline-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M8 7l4-4 4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 10H6a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-9a1 1 0 0 0-1-1h-2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>を押します。見つからないときは「…」を押すと出てきます。</span></li>
+          <li><span class="num">2</span><span>メニューを下にスクロールして、<strong>「ホーム画面に追加」</strong>を押します。</span></li>
+          <li><span class="num">3</span><span><strong>「Webアプリとして開く」はONのまま</strong>、右上の<strong>「追加」</strong>を押します。</span></li>
+        </ol>
+        <div id="a2hsMove" class="a2hs-warn">
+          <p><strong>マイホを登録済みの方へ</strong><br>iPhoneでは、Safariとホーム画面のアプリでデータが別々に保存されます。先にここで書き出しておき、ホーム画面のアプリの⚙️設定から読み込むと引き継げます。</p>
+          <button type="button" id="a2hsExport" class="btn btn-ghost btn-block btn-sm">今のマイホを書き出す</button>
+        </div>
+      </section>
+
+      <!-- Android -->
+      <section id="a2hsAndroid" class="a2hs-section">
+        <p class="a2hs-head">Android（Chrome）</p>
+        <ol class="a2hs-steps">
+          <li><span class="num">1</span><span>右上の<strong>「︙」メニュー</strong>を押します。</span></li>
+          <li><span class="num">2</span><span><strong>「ホーム画面に追加」</strong>または<strong>「アプリをインストール」</strong>を押します。</span></li>
+          <li><span class="num">3</span><span>確認が出たら<strong>「追加」</strong>（または「インストール」）を押します。</span></li>
+        </ol>
+      </section>
+
+      <p id="a2hsPc" class="a2hs-pc hidden">スマホでこのページを開いて、上の手順で追加してください。</p>
+    </div>
+
+    <div class="sheet-actions">
+      <button type="button" id="a2hsCloseBtn" class="btn btn-primary">閉じる</button>
     </div>
   </div>
 </div>

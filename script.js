@@ -36,6 +36,15 @@ const BUILTIN_STORES = [
 // id は一度決めたら変えない（既読管理に使う）
 const NEWS = [
   {
+    id: '2026-10-09-feature-7',
+    type: 'feature',
+    date: '2026-10-09',
+    items: [
+      'ホーム画面に追加のおすすめ表示と、追加のしかたの案内（⚙️設定からも見られます）',
+      'iPhoneでホーム画面のアプリにマイホを引き継ぐための書き出しボタン'
+    ]
+  },
+  {
     id: '2026-10-09-feature-6',
     type: 'feature',
     date: '2026-10-09',
@@ -117,6 +126,8 @@ const DRAFT_TTL_MS = 24 * 60 * 60 * 1000; // 下書きの保存期間（24時間
 
 // みんパチ
 const LS_TIP = 'kankin_compass_tip_seen_v1'; // コンパス案内を見たか
+const LS_A2HS = 'kankin_a2hs_dismissed_v1';   // ホーム画面追加のおすすめを閉じた日時
+const A2HS_SNOOZE_MS = 14 * 24 * 60 * 60 * 1000; // 閉じたら14日間は出さない
 const EXPORT_APP = 'kankin-calculator';
 const EXPORT_VERSION = 1;
 
@@ -153,6 +164,21 @@ const tipModal = $('tipModal');
 const tipOpen = $('tipOpen');
 const tipCancel = $('tipCancel');
 const tipVisual = $('tipVisual');
+const a2hsBanner = $('a2hsBanner');
+const a2hsHow = $('a2hsHow');
+const a2hsClose = $('a2hsClose');
+const a2hsModal = $('a2hsModal');
+const a2hsDone = $('a2hsDone');
+const a2hsMain = $('a2hsMain');
+const a2hsInstall = $('a2hsInstall');
+const a2hsIOS = $('a2hsIOS');
+const a2hsAndroid = $('a2hsAndroid');
+const a2hsMove = $('a2hsMove');
+const a2hsExport = $('a2hsExport');
+const a2hsPc = $('a2hsPc');
+const a2hsCloseBtn = $('a2hsCloseBtn');
+const a2hsSettingBtn = $('a2hsSettingBtn');
+const a2hsSettingDesc = $('a2hsSettingDesc');
 const tipImg = $('tipImg');
 
 const exportBtn = $('exportBtn');
@@ -635,6 +661,67 @@ function markTipSeen() {
   try {
     localStorage.setItem(LS_TIP, '1');
   } catch (e) { /* 何もしない */ }
+}
+
+// ============================================================
+//  ホーム画面に追加のおすすめ
+// ============================================================
+let deferredInstall = null; // Android Chromeの「インストール」イベント
+
+function isIOS() {
+  const ua = navigator.userAgent || '';
+  return /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
+function isAndroid() {
+  return /Android/i.test(navigator.userAgent || '');
+}
+
+function a2hsSnoozed() {
+  try {
+    const t = parseInt(localStorage.getItem(LS_A2HS) || '0', 10);
+    return t > 0 && Date.now() - t < A2HS_SNOOZE_MS;
+  } catch (e) {
+    return false;
+  }
+}
+
+function renderA2hsBanner() {
+  const show = !isStandalone() && (isIOS() || isAndroid() || !!deferredInstall) && !a2hsSnoozed();
+  a2hsBanner.classList.toggle('hidden', !show);
+}
+
+function dismissA2hsBanner() {
+  try {
+    localStorage.setItem(LS_A2HS, String(Date.now()));
+  } catch (e) { /* 何もしない */ }
+  a2hsBanner.classList.add('hidden');
+}
+
+function openA2hs() {
+  const standalone = isStandalone();
+  const ios = isIOS();
+  const android = isAndroid();
+
+  a2hsDone.classList.toggle('hidden', !standalone);
+  a2hsMain.classList.toggle('hidden', standalone);
+
+  // 端末に合った手順だけ表示（PCなどは両方）
+  a2hsIOS.classList.toggle('hidden', android);
+  a2hsAndroid.classList.toggle('hidden', ios);
+  a2hsPc.classList.toggle('hidden', ios || android);
+
+  // iPhoneはSafariとホーム画面アプリでデータが別なので、登録済みなら書き出しを案内
+  a2hsMove.classList.toggle('hidden', customStores.length === 0);
+  a2hsInstall.classList.toggle('hidden', !deferredInstall);
+
+  openModal(a2hsModal);
+}
+
+function renderA2hsSetting() {
+  a2hsSettingDesc.textContent = isStandalone()
+    ? 'いまホーム画面から開いています'
+    : 'アイコンからワンタップで、アプリのように使えます';
 }
 
 function onMinpachiClick(e) {
@@ -1359,6 +1446,39 @@ tipOpen.addEventListener('click', function () {
 });
 tipCancel.addEventListener('click', function () { closeModal(tipModal); });
 
+// ホーム画面に追加
+a2hsHow.addEventListener('click', openA2hs);
+a2hsClose.addEventListener('click', dismissA2hsBanner);
+a2hsSettingBtn.addEventListener('click', openA2hs);
+a2hsCloseBtn.addEventListener('click', function () { closeModal(a2hsModal); });
+a2hsExport.addEventListener('click', exportData);
+a2hsInstall.addEventListener('click', function () {
+  if (!deferredInstall) return;
+  const ev = deferredInstall;
+  deferredInstall = null;
+  a2hsInstall.classList.add('hidden');
+  ev.prompt();
+  if (ev.userChoice && ev.userChoice.then) {
+    ev.userChoice.then(function (r) {
+      if (r && r.outcome === 'accepted') closeModal(a2hsModal);
+    }).catch(function () { /* 何もしない */ });
+  }
+});
+
+// Android Chromeで「インストール」できる状態になったらボタンを出す
+window.addEventListener('beforeinstallprompt', function (e) {
+  e.preventDefault();
+  deferredInstall = e;
+  if (!a2hsModal.classList.contains('hidden')) a2hsInstall.classList.remove('hidden');
+  renderA2hsBanner();
+});
+
+window.addEventListener('appinstalled', function () {
+  deferredInstall = null;
+  a2hsBanner.classList.add('hidden');
+  showToast('ホーム画面に追加しました');
+});
+
 // Guide2.png が無い時は手描きの図に切り替え
 tipImg.addEventListener('error', function () { tipVisual.classList.remove('has-img'); });
 tipImg.addEventListener('load', function () { tipVisual.classList.add('has-img'); });
@@ -1414,7 +1534,7 @@ zoomScroll.addEventListener('click', function (e) {
 });
 
 // 背景タップで閉じる（入力中のフォームは誤タップ防止のため対象外）
-[newsModal, importModal, settingsModal].forEach(function (m) {
+[newsModal, importModal, settingsModal, a2hsModal].forEach(function (m) {
   m.addEventListener('click', function (e) {
     if (e.target !== m) return;
     if (m === importModal) pendingImport = null;
@@ -1426,6 +1546,8 @@ document.addEventListener('keydown', function (e) {
   if (e.key !== 'Escape') return;
   if (!tipModal.classList.contains('hidden')) {
     closeModal(tipModal);
+  } else if (!a2hsModal.classList.contains('hidden')) {
+    closeModal(a2hsModal);
   } else if (!zoomModal.classList.contains('hidden')) {
     closeZoom();
   } else if (!importModal.classList.contains('hidden')) {
@@ -1474,4 +1596,6 @@ if (tipImg.complete && tipImg.naturalWidth === 0) tipVisual.classList.remove('ha
 if (isStandalone()) document.body.classList.add('is-standalone');
 renderBadge();
 renderSettings();
+renderA2hsSetting();
+renderA2hsBanner();
 restoreDraft();   // 入力途中のフォームがあれば続きから
