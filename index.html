@@ -3,76 +3,172 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#14161f">
+<meta name="theme-color" content="#0e0c1d">
 <title>換金計算ツール</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap">
 <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-<main>
-  <h1>換金計算ツール</h1>
 
-  <!-- 店舗選択 -->
-  <section class="store">
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true"></span>
+    <h1>換金計算ツール</h1>
+  </div>
+  <button type="button" id="bellBtn" class="bell" aria-label="お知らせ">
+    <span aria-hidden="true">🔔</span>
+    <span id="bellBadge" class="badge hidden">0</span>
+  </button>
+</header>
+
+<main>
+
+  <!-- 店舗 -->
+  <section class="panel">
     <label for="storeSelect" class="field-label">店舗</label>
-    <select id="storeSelect"></select>
+    <div class="select-wrap">
+      <select id="storeSelect"></select>
+    </div>
     <div class="store-actions">
-      <button type="button" id="addBtn" class="btn">＋ マイホ追加</button>
+      <button type="button" id="addBtn" class="btn btn-primary">＋ マイホ追加</button>
       <button type="button" id="editBtn" class="btn btn-ghost">編集</button>
       <button type="button" id="delBtn" class="btn btn-danger">削除</button>
     </div>
   </section>
 
   <!-- 台の種類 -->
-  <section>
+  <section class="panel">
     <p class="field-label">台の種類</p>
     <div id="typeTabs" class="tabs" role="tablist"></div>
     <p class="info" id="info"></p>
   </section>
 
-  <!-- 入力と結果 -->
-  <section>
-    <label for="medals" class="field-label" id="medalsLabel">今の持ちメダル枚数</label>
-    <input id="medals" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="例：530">
-
-    <div class="result">
-      <div class="box">
-        <span>持ち帰れる金額</span>
-        <strong id="yen">0円</strong>
-      </div>
-      <div class="box">
-        <span>余り</span>
+  <!-- カウンター -->
+  <section class="counter" aria-live="polite">
+    <div class="lamps" aria-hidden="true"></div>
+    <p class="counter-label">持ち帰れる金額</p>
+    <p class="counter-main"><span id="yen">0</span><small>円</small></p>
+    <div class="counter-sub">
+      <div>
+        <span class="counter-label">余り</span>
         <strong id="rest">0枚</strong>
       </div>
+      <div>
+        <span class="counter-label">次の500円まで</span>
+        <strong id="next">－</strong>
+      </div>
+    </div>
+  </section>
+
+  <!-- 入力 -->
+  <section class="panel">
+    <label for="medals" class="field-label" id="medalsLabel">今の持ちメダル枚数</label>
+    <div class="medal-input">
+      <input id="medals" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="例：530">
+      <button type="button" id="clearBtn" class="clear" aria-label="入力を消す">×</button>
     </div>
     <p class="note" id="note"></p>
-    <p class="note next" id="next"></p>
   </section>
+
+  <!-- バックアップ -->
+  <section class="panel backup">
+    <p class="field-label">バックアップ</p>
+    <p class="backup-text">登録したマイホはこの端末だけに保存されます。消えたときのために書き出しておくと安心です。</p>
+    <div class="backup-actions">
+      <button type="button" id="exportBtn" class="btn btn-ghost">書き出し（JSON）</button>
+      <button type="button" id="importBtn" class="btn btn-ghost">読み込み</button>
+    </div>
+    <input type="file" id="importFile" accept=".json,application/json" hidden>
+  </section>
+
 </main>
 
-<!-- マイホ追加・編集フォーム -->
-<div id="modal" class="modal hidden" aria-hidden="true">
-  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-    <h2 id="modalTitle">マイホ追加</h2>
+<!-- ===== マイホ追加・編集フォーム ===== -->
+<div id="formModal" class="modal hidden" aria-hidden="true">
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="formTitle">
+    <div class="sheet-head">
+      <h2 id="formTitle">マイホ追加</h2>
+      <p class="step-label" id="stepLabel">1 / 2　店舗と台</p>
+      <div class="step-bar"><span id="stepFill"></span></div>
+    </div>
 
-    <label for="fName" class="field-label">店舗名</label>
-    <input id="fName" type="text" maxlength="30" autocomplete="off" placeholder="例：〇〇駅前店">
+    <!-- 1ページ目 -->
+    <div id="step1" class="step">
+      <div class="guide">
+        <p class="guide-title">入力のしかた</p>
+        <p>マイホの情報は <a href="https://minpachi.com" target="_blank" rel="noopener">みんパチ</a> で店舗名を検索して、次のページの画像を参考に数値を入力してください。</p>
+        <p class="guide-small">※みんパチに登録されていない店舗もあります。その場合はホールの掲示を確認してください。</p>
+        <a class="btn btn-ghost btn-block" href="https://minpachi.com" target="_blank" rel="noopener">みんパチを開く</a>
+      </div>
 
-    <p class="field-label">設置している台</p>
-    <div id="fTypes"></div>
+      <label for="fName" class="field-label">店舗名</label>
+      <input id="fName" type="text" maxlength="30" autocomplete="off" placeholder="例：〇〇駅前店">
 
-    <p class="form-hint">交換率は「100円あたり何枚（何玉）か」を入力します。景品は500円単位で計算します。</p>
-    <p class="err" id="fErr"></p>
+      <p class="field-label">設置している台（複数選択できます）</p>
+      <div id="fTypeChips" class="chips"></div>
+    </div>
+
+    <!-- 2ページ目 -->
+    <div id="step2" class="step hidden">
+      <div class="guide">
+        <p class="guide-title">みんパチのここを見ます</p>
+        <figure class="guide-figure">
+          <img id="guideImg" src="./img/minpachi-guide.png" alt="みんパチの店舗ページで、遊技料金と交換率が載っている場所">
+          <figcaption id="guideFallback" class="guide-fallback hidden">ガイド画像は準備中です。店舗ページの「遊技料金」と「交換率(換金率)」の欄を見てください。</figcaption>
+        </figure>
+        <p class="guide-small">交換率は「100円あたり何枚（何玉）か」を入力します。景品は500円単位で計算します。</p>
+      </div>
+      <div id="fDetails"></div>
+    </div>
+
+    <p class="err" id="fErr" role="alert"></p>
 
     <div class="sheet-actions">
       <button type="button" id="cancelBtn" class="btn btn-ghost">キャンセル</button>
-      <button type="button" id="saveBtn" class="btn">保存</button>
+      <button type="button" id="backBtn" class="btn btn-ghost hidden">戻る</button>
+      <button type="button" id="nextBtn" class="btn btn-primary">次へ</button>
+      <button type="button" id="saveBtn" class="btn btn-primary hidden">保存</button>
     </div>
   </div>
 </div>
 
+<!-- ===== お知らせ ===== -->
+<div id="newsModal" class="modal hidden" aria-hidden="true">
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="newsTitle">
+    <div class="sheet-head">
+      <h2 id="newsTitle">お知らせ</h2>
+    </div>
+    <div id="newsList" class="news-list"></div>
+    <div class="sheet-actions">
+      <button type="button" id="newsClose" class="btn btn-primary">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 読み込み方法の選択 ===== -->
+<div id="importModal" class="modal hidden" aria-hidden="true">
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="importTitle">
+    <div class="sheet-head">
+      <h2 id="importTitle">データの読み込み</h2>
+    </div>
+    <p class="import-msg" id="importMsg"></p>
+    <div class="import-actions">
+      <button type="button" id="impOverwrite" class="btn btn-primary btn-block">今のデータに追加（同じ店名は上書き）</button>
+      <button type="button" id="impSkip" class="btn btn-ghost btn-block">今のデータに追加（同じ店名はそのまま）</button>
+      <button type="button" id="impReplace" class="btn btn-danger btn-block">今のデータを全部置き換える</button>
+      <button type="button" id="impCancel" class="btn btn-ghost btn-block">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
 <footer>
   made by hiro/ヒロ ／ <a href="https://github.com/h1ro223" target="_blank" rel="noopener">GitHub</a>
 </footer>
+
 <script src="./script.js"></script>
 </body>
 </html>
