@@ -4,6 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0e0c1d">
+<meta name="apple-mobile-web-app-title" content="換金計算">
+<link rel="icon" href="./favicon.ico" sizes="any">
+<link rel="icon" href="./favicon.svg" type="image/svg+xml">
+<link rel="icon" href="./favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
 <title>換金計算ツール</title>
 <link rel="stylesheet" href="./style.css">
 </head>
@@ -33,9 +38,9 @@
       <select id="storeSelect" aria-label="店舗"></select>
     </div>
     <div class="store-actions">
-      <button type="button" id="addBtn" class="btn btn-primary btn-sm">＋ マイホ追加</button>
-      <button type="button" id="editBtn" class="btn btn-ghost btn-sm">編集</button>
-      <button type="button" id="delBtn" class="btn btn-danger btn-sm">削除</button>
+      <button type="button" id="addBtn" class="btn btn-primary">＋ マイホ追加</button>
+      <button type="button" id="editBtn" class="btn btn-ghost">編集</button>
+      <button type="button" id="delBtn" class="btn btn-danger">削除</button>
     </div>
     <div id="typeTabs" class="tabs" role="tablist" aria-label="台の種類"></div>
     <p class="info" id="info"></p>
@@ -60,7 +65,10 @@
 
   <!-- 入力 -->
   <section class="panel">
-    <label for="medals" class="field-label" id="medalsLabel">今の持ちメダル枚数</label>
+    <div class="input-head">
+      <label for="medals" class="field-label" id="medalsLabel">今の持ちメダル枚数</label>
+      <span class="note" id="note"></span>
+    </div>
     <div class="calc-row">
       <div class="medal-input">
         <input id="medals" type="text" inputmode="numeric" pattern="[0-9]*" enterkeyhint="done" autocomplete="off" placeholder="例：530">
@@ -68,7 +76,16 @@
       </div>
       <button type="button" id="calcBtn" class="btn btn-primary calc-btn">計算</button>
     </div>
-    <p class="note" id="note"></p>
+    <div class="step-btns" id="stepBtns" aria-label="枚数の増減">
+      <button type="button" class="sbtn plus" data-step="1">+1</button>
+      <button type="button" class="sbtn plus" data-step="10">+10</button>
+      <button type="button" class="sbtn plus" data-step="100">+100</button>
+      <button type="button" class="sbtn plus" data-step="1000">+1000</button>
+      <button type="button" class="sbtn minus" data-step="-1">−1</button>
+      <button type="button" class="sbtn minus" data-step="-10">−10</button>
+      <button type="button" class="sbtn minus" data-step="-100">−100</button>
+      <button type="button" class="sbtn minus" data-step="-1000">−1000</button>
+    </div>
   </section>
 
 </main>
@@ -136,7 +153,10 @@
       <div class="guide">
         <p class="guide-title">みんパチのここを見ます</p>
         <figure class="guide-figure">
-          <img id="guideImg" src="./img/minpachi-guide.png" alt="みんパチの店舗ページで、遊技料金と交換率が載っている場所">
+          <button type="button" id="guideZoomBtn" class="guide-zoom" aria-label="ガイド画像を拡大して見る">
+            <img id="guideImg" src="./Guide.png" alt="みんパチで店舗を検索し、遊技料金と交換率を見て入力する手順">
+            <span class="guide-zoom-hint">🔍 タップで拡大</span>
+          </button>
           <figcaption id="guideFallback" class="guide-fallback hidden">ガイド画像は準備中です。店舗ページの「遊技料金」と「交換率(換金率)」の欄を見てください。</figcaption>
         </figure>
         <p class="guide-small">交換率は「100円あたり何枚（何玉）か」を入力します。景品は500円単位で計算します。</p>
@@ -182,6 +202,15 @@
       <button type="button" id="impCancel" class="btn btn-ghost btn-block">キャンセル</button>
     </div>
   </div>
+</div>
+
+<!-- ===== ガイド画像の拡大表示 ===== -->
+<div id="zoomModal" class="modal zoom hidden" aria-hidden="true" role="dialog" aria-modal="true" aria-label="ガイド画像の拡大表示">
+  <div class="zoom-scroll large" id="zoomScroll">
+    <img id="zoomImg" src="./Guide.png" alt="みんパチで店舗を検索し、遊技料金と交換率を見て入力する手順">
+  </div>
+  <button type="button" id="zoomClose" class="zoom-close" aria-label="閉じる">×</button>
+  <p class="zoom-hint">スワイプで移動・画像タップで全体表示／拡大</p>
 </div>
 
 <div id="toast" class="toast" role="status" aria-live="polite"></div>

@@ -6,7 +6,7 @@
 const PRIZE_UNIT = 500; // 景品の最小単位（円）
 
 // カウントアニメの設定
-const ANIM_MAX_MS = 5000;     // 最大時間（0→38,000円くらいでこの長さ）
+const ANIM_MAX_MS = 3000;     // 最大時間（0→38,000円くらいでこの長さ）
 const ANIM_MIN_MS = 800;      // 最小時間
 const ANIM_REF_DIFF = 38000;  // この金額差で最大時間になる
 
@@ -35,6 +35,18 @@ const BUILTIN_STORES = [
 // type: 'feature' → 機能追加 / 'stores' → 店舗追加
 // id は一度決めたら変えない（既読管理に使う）
 const NEWS = [
+  {
+    id: '2026-10-09-feature-4',
+    type: 'feature',
+    date: '2026-10-09',
+    items: [
+      'マイホ登録ガイドの画像を追加（タップで拡大）',
+      '交換情報の入力欄を1行にまとめて見やすく',
+      '枚数の増減ボタン（±1・±10・±100・±1000）',
+      'カウントアニメを最大3秒に短縮',
+      'サイトのアイコンを追加（ホーム画面に追加した時のアイコンも）'
+    ]
+  },
   {
     id: '2026-10-09-feature-3',
     type: 'feature',
@@ -140,6 +152,12 @@ const nextBtn = $('nextBtn');
 const saveBtn = $('saveBtn');
 const guideImg = $('guideImg');
 const guideFallback = $('guideFallback');
+const guideZoomBtn = $('guideZoomBtn');
+const zoomModal = $('zoomModal');
+const zoomScroll = $('zoomScroll');
+const zoomImg = $('zoomImg');
+const zoomClose = $('zoomClose');
+const stepBtns = $('stepBtns');
 
 const toastEl = $('toast');
 
@@ -430,8 +448,8 @@ function renderMeta() {
   const per = unitMedals(m.rate);
   medalsLabel.textContent = '今の持ち' + (t.unit === '玉' ? '玉数' : 'メダル枚数');
   medalsEl.placeholder = '例：' + (per * 20 + Math.round(per / 2));
-  infoEl.textContent = fmt(m.price) + '円' + t.kind + '　' + fmt(m.rate) + t.unit + '交換（100円あたり）';
-  noteEl.textContent = PRIZE_UNIT + '円 = ' + per + t.unit + '単位／1' + t.unit + ' ≈ ' + (100 / m.rate).toFixed(2) + '円';
+  infoEl.textContent = fmt(m.price) + '円' + t.kind + '・' + fmt(m.rate) + t.unit + '交換・1' + t.unit + '≈' + (100 / m.rate).toFixed(2) + '円';
+  noteEl.textContent = PRIZE_UNIT + '円 = ' + per + t.unit + '単位';
 }
 
 // 入力欄の状態（×ボタン・未計算の光り）
@@ -680,6 +698,24 @@ function buildChips() {
 function buildDetails(store) {
   fDetails.innerHTML = '';
 
+  // ラベル＋入力欄＋単位のセット（左右半々で1行に並べる）
+  const makeField = function (labelNodes, input, unitText) {
+    const field = document.createElement('label');
+    field.className = 'dfield';
+    const lab = document.createElement('span');
+    lab.className = 'dlabel';
+    labelNodes.forEach(function (n) { lab.appendChild(n); });
+    const box = document.createElement('span');
+    box.className = 'dinput';
+    const unit = document.createElement('span');
+    unit.textContent = unitText;
+    box.appendChild(input);
+    box.appendChild(unit);
+    field.appendChild(lab);
+    field.appendChild(box);
+    return field;
+  };
+
   TYPES.forEach(function (t) {
     const m = store ? store.machines[t.key] : null;
     const has = isValidMachine(m);
@@ -692,12 +728,7 @@ function buildDetails(store) {
     title.className = 'detail-title';
     title.textContent = t.label;
 
-    // 遊技料金
-    const row1 = document.createElement('div');
-    row1.className = 'frow';
-    const l1 = document.createElement('span');
-    l1.className = 'frow-label';
-    l1.textContent = '遊技料金';
+    // 遊技料金（左）
     const price = document.createElement('input');
     price.type = 'text';
     price.inputMode = 'decimal';
@@ -706,20 +737,8 @@ function buildDetails(store) {
     price.value = has ? String(m.price) : String(t.defPrice);
     price.dataset.role = 'price';
     price.setAttribute('aria-label', t.label + 'の遊技料金');
-    const u1 = document.createElement('span');
-    u1.textContent = '円';
-    row1.appendChild(l1);
-    row1.appendChild(price);
-    row1.appendChild(u1);
 
-    // 交換率
-    const row2 = document.createElement('div');
-    row2.className = 'frow';
-    const l2 = document.createElement('span');
-    l2.className = 'frow-label';
-    l2.textContent = '交換率';
-    const prefix = document.createElement('span');
-    prefix.className = 'prefix';
+    // 交換率（右）
     const rate = document.createElement('input');
     rate.type = 'text';
     rate.inputMode = 'decimal';
@@ -728,14 +747,10 @@ function buildDetails(store) {
     rate.value = has ? String(m.rate) : '';
     rate.dataset.role = 'rate';
     rate.setAttribute('aria-label', t.label + 'の交換率');
-    const u2 = document.createElement('span');
-    u2.textContent = t.unit;
-    row2.appendChild(l2);
-    row2.appendChild(prefix);
-    row2.appendChild(rate);
-    row2.appendChild(u2);
 
-    // 「21.73スロ」のように遊技料金に連動
+    // 「交換率（21.73スロ）」のように遊技料金に連動
+    const prefix = document.createElement('span');
+    prefix.className = 'prefix';
     const updatePrefix = function () {
       const p = parsePositive(price.value);
       prefix.textContent = (isNaN(p) ? fmt(t.defPrice) : fmt(p)) + t.kind;
@@ -744,9 +759,17 @@ function buildDetails(store) {
     rate.addEventListener('input', function () { fErr.textContent = ''; });
     updatePrefix();
 
+    const grid = document.createElement('div');
+    grid.className = 'detail-grid';
+    grid.appendChild(makeField([document.createTextNode('遊技料金')], price, '円'));
+    grid.appendChild(makeField([
+      document.createTextNode('交換率（'),
+      prefix,
+      document.createTextNode('）')
+    ], rate, t.unit));
+
     block.appendChild(title);
-    block.appendChild(row1);
-    block.appendChild(row2);
+    block.appendChild(grid);
     fDetails.appendChild(block);
   });
 }
@@ -900,13 +923,43 @@ function deleteCurrent() {
 
 // ガイド画像（未設置なら準備中の表示に切り替え）
 function showGuideFallback() {
-  guideImg.classList.add('hidden');
+  guideZoomBtn.classList.add('hidden');
   guideFallback.classList.remove('hidden');
 }
 
 function showGuideImage() {
-  guideImg.classList.remove('hidden');
+  guideZoomBtn.classList.remove('hidden');
   guideFallback.classList.add('hidden');
+}
+
+// ===== ガイド画像の拡大表示 =====
+function openZoom() {
+  if (!guideImg.complete || guideImg.naturalWidth === 0) return;
+  zoomScroll.classList.add('large');
+  openModal(zoomModal);
+  zoomScroll.scrollLeft = 0;
+  zoomScroll.scrollTop = 0;
+}
+
+function closeZoom() {
+  closeModal(zoomModal);
+}
+
+// 画像タップで「全体表示」⇔「拡大」を切替（拡大時はタップした場所を中心に）
+function toggleZoom(e) {
+  const rect = zoomImg.getBoundingClientRect();
+  const rx = rect.width ? (e.clientX - rect.left) / rect.width : 0.5;
+  const ry = rect.height ? (e.clientY - rect.top) / rect.height : 0.5;
+  const toLarge = !zoomScroll.classList.contains('large');
+  zoomScroll.classList.toggle('large', toLarge);
+
+  if (toLarge) {
+    zoomScroll.scrollLeft = zoomImg.offsetLeft + rx * zoomImg.offsetWidth - zoomScroll.clientWidth / 2;
+    zoomScroll.scrollTop = zoomImg.offsetTop + ry * zoomImg.offsetHeight - zoomScroll.clientHeight / 2;
+  } else {
+    zoomScroll.scrollLeft = 0;
+    zoomScroll.scrollTop = 0;
+  }
 }
 
 // ============================================================
@@ -1091,6 +1144,19 @@ calcBtn.addEventListener('click', function () {
   runCalc(true);
 });
 
+// 増減ボタン（入力欄の数字だけ変える。結果は計算ボタンで更新）
+stepBtns.addEventListener('click', function (e) {
+  const b = e.target.closest('.sbtn');
+  if (!b) return;
+  const step = parseInt(b.dataset.step, 10);
+  if (!step) return;
+  const n = Math.max(0, Math.min(9999999, parseMedals(medalsEl.value) + step));
+  medalsEl.value = String(n);
+  state.medals = medalsEl.value;
+  saveState();
+  renderInputState();
+});
+
 clearBtn.addEventListener('click', function () {
   medalsEl.value = '';
   state.medals = '';
@@ -1151,6 +1217,12 @@ impCancel.addEventListener('click', function () {
 
 guideImg.addEventListener('error', showGuideFallback);
 guideImg.addEventListener('load', showGuideImage);
+guideZoomBtn.addEventListener('click', openZoom);
+zoomClose.addEventListener('click', closeZoom);
+zoomImg.addEventListener('click', toggleZoom);
+zoomScroll.addEventListener('click', function (e) {
+  if (e.target === zoomScroll) closeZoom(); // 画像の外をタップで閉じる
+});
 
 // 背景タップで閉じる（入力中のフォームは誤タップ防止のため対象外）
 [newsModal, importModal, settingsModal].forEach(function (m) {
@@ -1163,7 +1235,9 @@ guideImg.addEventListener('load', showGuideImage);
 
 document.addEventListener('keydown', function (e) {
   if (e.key !== 'Escape') return;
-  if (!importModal.classList.contains('hidden')) {
+  if (!zoomModal.classList.contains('hidden')) {
+    closeZoom();
+  } else if (!importModal.classList.contains('hidden')) {
     pendingImport = null;
     closeModal(importModal);
   } else if (!newsModal.classList.contains('hidden')) {

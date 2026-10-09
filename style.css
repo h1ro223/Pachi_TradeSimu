@@ -272,6 +272,11 @@ select {
   margin: 8px 0 10px;
 }
 
+.store-actions .btn {
+  padding: 10px 12px;
+  font-size: 14px;
+}
+
 .store-actions #addBtn {
   flex: 1;
 }
@@ -459,11 +464,69 @@ select {
   50% { box-shadow: 0 0 0 3px rgba(255, 205, 60, 0.35), 0 0 18px rgba(255, 205, 60, 0.6); }
 }
 
+/* ラベルと「500円=○枚単位」を1行に */
+.input-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.input-head .field-label {
+  margin: 0;
+  flex-shrink: 0;
+}
+
 .note {
-  margin: 8px 0 0;
-  text-align: center;
+  margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: right;
   font-size: 11px;
   color: var(--muted);
+}
+
+/* ===== 増減ボタン ===== */
+.step-btns {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.sbtn {
+  padding: 8px 2px;
+  font-size: 14px;
+  font-family: inherit;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel-2);
+  cursor: pointer;
+}
+
+.sbtn.plus {
+  color: var(--cyan);
+  border-color: rgba(69, 227, 255, 0.35);
+}
+
+.sbtn.minus {
+  color: var(--pink);
+  border-color: rgba(255, 79, 154, 0.35);
+}
+
+.sbtn:active {
+  transform: scale(0.95);
+  background: #2b2652;
+}
+
+.sbtn:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
 }
 
 /* ===== モーダル ===== */
@@ -681,17 +744,118 @@ select {
   margin: 0 0 8px;
 }
 
-.guide-figure img {
+.guide-zoom {
+  position: relative;
+  display: block;
+  width: 100%;
+  padding: 0;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: zoom-in;
+}
+
+.guide-zoom img {
   display: block;
   width: 100%;
   height: auto;
-  border-radius: 10px;
-  border: 1px solid var(--line);
 }
 
-.guide-figure img.hidden,
+.guide-zoom-hint {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  padding: 4px 9px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  background: rgba(14, 12, 29, 0.82);
+  border-radius: 999px;
+}
+
+.guide-zoom.hidden,
 .guide-fallback.hidden {
   display: none;
+}
+
+/* ===== ガイド画像の拡大表示 ===== */
+.modal.zoom {
+  z-index: 250;
+  display: block;
+  padding: 0;
+  background: rgba(4, 3, 10, 0.94);
+}
+
+.modal.zoom.hidden {
+  display: none;
+}
+
+.zoom-scroll {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding: calc(env(safe-area-inset-top, 0px) + 60px) 12px calc(env(safe-area-inset-bottom, 0px) + 44px);
+}
+
+/* margin:auto で中央寄せ（はみ出した時も端まで見える） */
+.zoom-scroll img {
+  display: block;
+  margin: auto;
+  width: 100%;
+  max-width: 1600px;
+  height: auto;
+  background: #fff;
+  border-radius: 8px;
+  cursor: zoom-in;
+}
+
+.zoom-scroll.large img {
+  width: 260vw;
+  max-width: none;
+  cursor: zoom-out;
+}
+
+@media (min-width: 900px) {
+  .zoom-scroll.large img {
+    width: 2400px;
+  }
+}
+
+.zoom-close {
+  position: absolute;
+  top: calc(env(safe-area-inset-top, 0px) + 10px);
+  right: 12px;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  font-size: 24px;
+  line-height: 1;
+  color: var(--text);
+  background: var(--panel);
+  border: 2px solid var(--line);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.zoom-close:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+.zoom-hint {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
+  pointer-events: none;
 }
 
 .guide-fallback {
@@ -754,30 +918,42 @@ select {
   color: var(--gold);
 }
 
-.frow {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
   margin-top: 8px;
-  font-size: 14px;
-  color: var(--muted);
 }
 
-.frow-label {
-  width: 60px;
-  flex-shrink: 0;
+.dfield {
+  display: block;
+  min-width: 0;
 }
 
-.frow .prefix {
-  flex-shrink: 0;
-  max-width: 96px;
+.dlabel {
+  display: block;
+  margin-bottom: 4px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: var(--text);
+  font-size: 11px;
+  color: var(--muted);
 }
 
-.frow input[type="text"] {
+.dlabel .prefix {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.dinput {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.dinput input[type="text"] {
   flex: 1;
   min-width: 0;
   padding: 8px 10px;
@@ -922,6 +1098,13 @@ footer a {
   text-decoration: none;
 }
 
+/* 少し背の低い画面 */
+@media (max-height: 760px) {
+  .counter { padding: 18px 12px 10px; }
+  .counter-main { font-size: clamp(34px, 10.5vw, 44px); margin-bottom: 6px; }
+  .sbtn { padding: 7px 2px; font-size: 13px; }
+}
+
 /* 背の低い画面（iPhone SEなど）はさらに詰める */
 @media (max-height: 640px) {
   .topbar { margin-top: 6px; }
@@ -931,6 +1114,21 @@ footer a {
   .counter-main { font-size: clamp(32px, 10vw, 42px); margin-bottom: 6px; }
   .counter-sub strong { font-size: 17px; }
   .store-actions { margin: 6px 0 8px; }
+  .store-actions .btn { padding: 8px 10px; }
+  .step-btns { gap: 5px; margin-top: 6px; }
+  .sbtn { padding: 6px 2px; }
+  #medals { padding-top: 8px; padding-bottom: 8px; font-size: 20px; }
+  .icon-btn { width: 34px; height: 34px; font-size: 15px; }
+  main { gap: 6px; }
+  .panel { padding: 8px 10px; }
+  .tab { padding: 7px 2px; }
+  .info { margin-top: 6px; }
+  .counter { padding: 14px 10px 8px; }
+  .counter-main { font-size: 34px; margin: 0 0 4px; }
+  .counter-sub > div { padding-top: 6px; }
+  .counter-sub strong { font-size: 16px; }
+  .sbtn { padding: 5px 2px; }
+  footer { padding: 6px 0 4px; }
   footer { padding: 10px 0 6px; }
 }
 
