@@ -19,13 +19,21 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom);
+  padding: env(safe-area-inset-top, 0px) 16px env(safe-area-inset-bottom, 0px);
+}
+
+body.modal-open {
+  overflow: hidden;
 }
 
 main {
   width: 100%;
-  max-width: 420px;
-  margin: 32px auto 0;
+  max-width: 440px;
+  margin: 28px auto 0;
+}
+
+section {
+  margin-top: 20px;
 }
 
 h1 {
@@ -34,43 +42,138 @@ h1 {
   text-align: center;
 }
 
-.sub {
-  margin: 4px 0 24px;
-  text-align: center;
-  color: #9aa0b4;
-  font-size: 13px;
-}
-
-label {
+.field-label {
   display: block;
-  margin-bottom: 8px;
+  margin: 0 0 8px;
   font-size: 14px;
   color: #c7cbe0;
 }
 
-input {
+/* ===== 入力系（16px以上でSafariの自動ズーム防止） ===== */
+input[type="text"],
+select {
   width: 100%;
-  padding: 14px;
-  font-size: 24px; /* 16px以上でSafariの自動ズーム防止 */
-  text-align: center;
+  padding: 12px 14px;
+  font-size: 16px;
   color: #fff;
   background: #1f2333;
   border: 2px solid #343a55;
   border-radius: 12px;
   outline: none;
+  font-family: inherit;
   -webkit-user-select: text;
   user-select: text;
+  -webkit-touch-callout: default;
 }
 
-input:focus {
+input[type="text"]:focus,
+select:focus {
   border-color: #ffd54a;
 }
 
+select {
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, #9aa0b4 50%), linear-gradient(135deg, #9aa0b4 50%, transparent 50%);
+  background-position: calc(100% - 20px) 50%, calc(100% - 14px) 50%;
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+  padding-right: 36px;
+}
+
+#medals {
+  padding: 14px;
+  font-size: 24px;
+  text-align: center;
+}
+
+/* ===== ボタン ===== */
+.btn {
+  padding: 10px 14px;
+  font-size: 15px;
+  font-family: inherit;
+  font-weight: 600;
+  color: #14161f;
+  background: #ffd54a;
+  border: 2px solid #ffd54a;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn:focus-visible,
+.tab:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+.btn-ghost {
+  color: #c7cbe0;
+  background: transparent;
+  border-color: #343a55;
+}
+
+.btn-danger {
+  color: #ff8a8a;
+  background: transparent;
+  border-color: #5a2f3a;
+}
+
+.btn.hidden {
+  display: none;
+}
+
+.store-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.store-actions #addBtn {
+  flex: 1;
+}
+
+/* ===== 台の種類タブ ===== */
+.tabs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.tab {
+  padding: 10px 4px;
+  font-size: 14px;
+  font-family: inherit;
+  font-weight: 600;
+  color: #9aa0b4;
+  background: #1f2333;
+  border: 2px solid #343a55;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.tab.active {
+  color: #14161f;
+  background: #ffd54a;
+  border-color: #ffd54a;
+}
+
+.info {
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: #9aa0b4;
+  text-align: center;
+}
+
+/* ===== 結果 ===== */
 .result {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
-  margin-top: 20px;
+  margin-top: 16px;
 }
 
 .box {
@@ -90,18 +193,152 @@ input:focus {
 .box strong {
   font-size: 26px;
   color: #ffd54a;
+  word-break: break-all;
 }
 
 .note {
-  margin-top: 12px;
+  margin: 12px 0 0;
   text-align: center;
   font-size: 12px;
   color: #7c8298;
 }
 
+.note.next {
+  margin-top: 4px;
+  color: #c7cbe0;
+}
+
+/* ===== モーダル ===== */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: calc(env(safe-area-inset-top, 0px) + 16px) 16px calc(env(safe-area-inset-bottom, 0px) + 16px);
+  background: rgba(5, 6, 12, 0.75);
+}
+
+.modal.hidden {
+  display: none;
+}
+
+.sheet {
+  width: 100%;
+  max-width: 440px;
+  max-height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  background: #1a1d2b;
+  border: 1px solid #343a55;
+  border-radius: 16px;
+  padding: 20px 16px;
+}
+
+.sheet h2 {
+  margin: 0 0 16px;
+  font-size: 18px;
+  text-align: center;
+}
+
+.sheet #fName {
+  margin-bottom: 18px;
+}
+
+.type-block {
+  margin-bottom: 8px;
+  border: 2px solid #343a55;
+  border-radius: 12px;
+  background: #1f2333;
+}
+
+.type-block.on {
+  border-color: #ffd54a;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.check input {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: #ffd54a;
+}
+
+.type-detail {
+  padding: 0 12px 12px;
+}
+
+.type-detail.hidden {
+  display: none;
+}
+
+.frow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 14px;
+  color: #c7cbe0;
+}
+
+.frow .frow-label {
+  width: 64px;
+  flex-shrink: 0;
+}
+
+.frow .prefix {
+  flex-shrink: 0;
+  max-width: 96px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #fff;
+}
+
+.frow input[type="text"] {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  text-align: right;
+}
+
+.form-hint {
+  margin: 12px 0 0;
+  font-size: 12px;
+  color: #7c8298;
+}
+
+.err {
+  min-height: 1em;
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: #ff8a8a;
+}
+
+.sheet-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.sheet-actions .btn {
+  flex: 1;
+  padding: 12px;
+}
+
 footer {
   margin-top: auto;
-  padding: 24px 0 16px;
+  padding: 28px 0 16px;
   text-align: center;
   font-size: 12px;
   color: #7c8298;
@@ -110,4 +347,10 @@ footer {
 footer a {
   color: #ffd54a;
   text-decoration: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn:active {
+    transform: none;
+  }
 }
