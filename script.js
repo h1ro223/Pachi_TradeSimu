@@ -5,12 +5,17 @@
 // ===== 基本設定 =====
 const PRIZE_UNIT = 500; // 景品の最小単位（円）
 
-// 台の種類
+// カウントアニメの設定
+const ANIM_MAX_MS = 5000;     // 最大時間（0→38,000円くらいでこの長さ）
+const ANIM_MIN_MS = 800;      // 最小時間
+const ANIM_REF_DIFF = 38000;  // この金額差で最大時間になる
+
+// 台の種類（並び順＝画面の表示順。みんパチに合わせて料金の高い順）
 const TYPES = [
-  { key: 'p1',  label: '1円パチンコ',  short: '1パチ',  kind: 'パチ', unit: '玉', defPrice: 1,  ratePh: '例 100' },
   { key: 'p4',  label: '4円パチンコ',  short: '4パチ',  kind: 'パチ', unit: '玉', defPrice: 4,  ratePh: '例 25' },
-  { key: 's5',  label: '5円スロット',  short: '5スロ',  kind: 'スロ', unit: '枚', defPrice: 5,  ratePh: '例 20' },
-  { key: 's20', label: '20円スロット', short: '20スロ', kind: 'スロ', unit: '枚', defPrice: 20, ratePh: '例 5' }
+  { key: 'p1',  label: '1円パチンコ',  short: '1パチ',  kind: 'パチ', unit: '玉', defPrice: 1,  ratePh: '例 100' },
+  { key: 's20', label: '20円スロット', short: '20スロ', kind: 'スロ', unit: '枚', defPrice: 20, ratePh: '例 5' },
+  { key: 's5',  label: '5円スロット',  short: '5スロ',  kind: 'スロ', unit: '枚', defPrice: 5,  ratePh: '例 20' }
 ];
 
 // ===== 収録店舗（アプデで追加していく） =====
@@ -30,6 +35,18 @@ const BUILTIN_STORES = [
 // type: 'feature' → 機能追加 / 'stores' → 店舗追加
 // id は一度決めたら変えない（既読管理に使う）
 const NEWS = [
+  {
+    id: '2026-10-09-feature-3',
+    type: 'feature',
+    date: '2026-10-09',
+    items: [
+      '計算ボタン（押したときに結果が出るように）',
+      '金額のカウントアニメ（設定でON/OFF）',
+      '設定画面（右上の⚙️）。書き出し・読み込みは設定に移動',
+      'スマホ1画面に収まるよう表示をコンパクトに',
+      '台の並び順をみんパチと同じ順（4パチ→1パチ→20スロ→5スロ）に'
+    ]
+  },
   {
     id: '2026-10-09-feature-2',
     type: 'feature',
@@ -63,6 +80,7 @@ const NEWS = [
 const LS_STORES = 'kankin_custom_stores_v1';
 const LS_STATE = 'kankin_state_v1';
 const LS_NEWS = 'kankin_news_seen_v1';
+const LS_SETTINGS = 'kankin_settings_v1';
 const EXPORT_APP = 'kankin-calculator';
 const EXPORT_VERSION = 1;
 
@@ -78,6 +96,8 @@ const infoEl = $('info');
 const medalsLabel = $('medalsLabel');
 const medalsEl = $('medals');
 const clearBtn = $('clearBtn');
+const calcBtn = $('calcBtn');
+const counterEl = $('counter');
 const yenEl = $('yen');
 const restEl = $('rest');
 const nextEl = $('next');
@@ -88,6 +108,11 @@ const bellBadge = $('bellBadge');
 const newsModal = $('newsModal');
 const newsList = $('newsList');
 const newsClose = $('newsClose');
+
+const settingsBtn = $('settingsBtn');
+const settingsModal = $('settingsModal');
+const settingsClose = $('settingsClose');
+const animToggle = $('animToggle');
 
 const exportBtn = $('exportBtn');
 const importBtn = $('importBtn');
@@ -121,12 +146,19 @@ const toastEl = $('toast');
 // ===== 状態 =====
 let customStores = loadCustomStores();
 const state = loadState();
+const settings = loadSettings();
 let editingId = null;     // nullなら新規追加
 let formStep = 1;
 let formSelected = {};    // { 台キー: true }
 let pendingImport = null; // 読み込み待ちの店舗リスト
 let toastTimer = null;
 let idSeq = 0;
+
+// カウンター表示用
+let shownYen = 0;         // 今画面に出ている金額（アニメ途中の値も含む）
+let animFrame = 0;
+let hitTimer = null;
+let lastCalcInput = null; // 最後に計算したときの入力値
 
 // ============================================================
 //  ユーティリティ
@@ -145,6 +177,12 @@ function parsePositive(str) {
   if (!/^\d+(\.\d+)?$/.test(s)) return NaN;
   const n = parseFloat(s);
   return n > 0 ? n : NaN;
+}
+
+// 枚数入力を整数に（空欄や不正は0）
+function parseMedals(str) {
+  const s = normalizeNum(str);
+  return /^\d+$/.test(s) ? Math.min(parseInt(s, 10), 9999999) : 0;
 }
 
 function typeOf(key) {
@@ -216,6 +254,10 @@ function showToast(msg) {
   toastTimer = setTimeout(function () { toastEl.classList.remove('show'); }, 2600);
 }
 
+function blurActive() {
+  if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+}
+
 // ============================================================
 //  保存・読み込み（localStorage）
 // ============================================================
@@ -265,6 +307,29 @@ function loadState() {
 function saveState() {
   try {
     localStorage.setItem(LS_STATE, JSON.stringify(state));
+  } catch (e) { /* 保存できなくても動作は続ける */ }
+}
+
+function loadSettings() {
+  // 「視差効果を減らす」がONの端末は、アニメの初期値をOFFに
+  let reduce = false;
+  try {
+    reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  } catch (e) { reduce = false; }
+  const def = { anim: !reduce };
+
+  try {
+    const s = JSON.parse(localStorage.getItem(LS_SETTINGS) || 'null');
+    if (!s || typeof s !== 'object') return def;
+    return { anim: typeof s.anim === 'boolean' ? s.anim : def.anim };
+  } catch (e) {
+    return def;
+  }
+}
+
+function saveSettings() {
+  try {
+    localStorage.setItem(LS_SETTINGS, JSON.stringify(settings));
   } catch (e) { /* 保存できなくても動作は続ける */ }
 }
 
@@ -348,42 +413,127 @@ function renderTabs() {
       state.typeKey = t.key;
       saveState();
       renderTabs();
-      calc();
+      renderMeta();
+      runCalc(false); // 台の切替はアニメなしで即表示
     });
     typeTabs.appendChild(b);
   });
 }
 
-function calc() {
+// 現在の店舗・台の情報表示（ラベル・交換率など）
+function renderMeta() {
   const store = currentStore();
   const t = typeOf(state.typeKey);
   const m = store.machines[state.typeKey];
   if (!t || !isValidMachine(m)) return;
 
   const per = unitMedals(m.rate);
-
   medalsLabel.textContent = '今の持ち' + (t.unit === '玉' ? '玉数' : 'メダル枚数');
   medalsEl.placeholder = '例：' + (per * 20 + Math.round(per / 2));
   infoEl.textContent = fmt(m.price) + '円' + t.kind + '　' + fmt(m.rate) + t.unit + '交換（100円あたり）';
+  noteEl.textContent = PRIZE_UNIT + '円 = ' + per + t.unit + '単位／1' + t.unit + ' ≈ ' + (100 / m.rate).toFixed(2) + '円';
+}
 
-  const s = normalizeNum(medalsEl.value);
-  const n = /^\d+$/.test(s) ? Math.min(parseInt(s, 10), 9999999) : 0;
+// 入力欄の状態（×ボタン・未計算の光り）
+function renderInputState() {
+  clearBtn.style.visibility = medalsEl.value ? 'visible' : 'hidden';
+  const pending = lastCalcInput !== null && parseMedals(medalsEl.value) !== lastCalcInput;
+  calcBtn.classList.toggle('pending', pending);
+}
 
-  const units = Math.floor(n / per);
+// ============================================================
+//  計算とカウントアニメ
+// ============================================================
+function setYen(v) {
+  shownYen = v;
+  yenEl.textContent = fmt(Math.round(v));
+}
+
+function stopYenAnim() {
+  if (animFrame) cancelAnimationFrame(animFrame);
+  animFrame = 0;
+}
+
+function flashCounter() {
+  counterEl.classList.remove('hit');
+  void counterEl.offsetWidth; // アニメを最初から再生させる
+  counterEl.classList.add('hit');
+  clearTimeout(hitTimer);
+  hitTimer = setTimeout(function () { counterEl.classList.remove('hit'); }, 600);
+}
+
+// 金額差に応じたアニメ時間（差が大きいほど長く、最大5秒）
+function animDuration(diff) {
+  const ratio = Math.sqrt(Math.min(1, diff / ANIM_REF_DIFF));
+  return ANIM_MIN_MS + (ANIM_MAX_MS - ANIM_MIN_MS) * ratio;
+}
+
+// 最後になるほどゆっくり
+function easeOutQuart(t) {
+  return 1 - Math.pow(1 - t, 4);
+}
+
+function animateYen(target) {
+  stopYenAnim();
+  const from = shownYen;
+  const diff = Math.abs(target - from);
+
+  if (diff < 1) {
+    setYen(target);
+    return;
+  }
+
+  const duration = animDuration(diff);
+  const start = performance.now();
+
+  const step = function (now) {
+    const t = Math.min(1, (now - start) / duration);
+    setYen(from + (target - from) * easeOutQuart(t));
+    if (t < 1) {
+      animFrame = requestAnimationFrame(step);
+    } else {
+      animFrame = 0;
+      setYen(target);
+      flashCounter();
+    }
+  };
+  animFrame = requestAnimationFrame(step);
+}
+
+// animate: true＝計算ボタン押下（設定ONならアニメ）/ false＝即表示
+function runCalc(animate) {
+  const store = currentStore();
+  const t = typeOf(state.typeKey);
+  const m = store.machines[state.typeKey];
+  if (!t || !isValidMachine(m)) return;
+
+  const per = unitMedals(m.rate);
+  const n = parseMedals(medalsEl.value);
+  const yen = Math.floor(n / per) * PRIZE_UNIT;
   const rest = n % per;
 
-  yenEl.textContent = fmt(units * PRIZE_UNIT);
+  // 余り・次の500円までは即切替
   restEl.textContent = fmt(rest) + t.unit;
   nextEl.textContent = n > 0 ? 'あと' + fmt(per - rest) + t.unit : '－';
-  noteEl.textContent = PRIZE_UNIT + '円 = ' + per + t.unit + '単位／1' + t.unit + ' ≈ ' + (100 / m.rate).toFixed(2) + '円';
-  clearBtn.style.visibility = medalsEl.value ? 'visible' : 'hidden';
+
+  if (animate && settings.anim) {
+    animateYen(yen);
+  } else {
+    stopYenAnim();
+    setYen(yen);
+    if (animate) flashCounter();
+  }
+
+  lastCalcInput = n;
+  renderInputState();
 }
 
 function renderAll() {
   renderStoreSelect();
   renderActions();
   renderTabs();
-  calc();
+  renderMeta();
+  runCalc(false);
 }
 
 // ============================================================
@@ -403,7 +553,19 @@ function closeModal(el) {
   if (!document.querySelector('.modal:not(.hidden)')) {
     document.body.classList.remove('modal-open');
   }
-  if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+  blurActive();
+}
+
+// ============================================================
+//  設定
+// ============================================================
+function renderSettings() {
+  animToggle.setAttribute('aria-checked', settings.anim ? 'true' : 'false');
+}
+
+function openSettings() {
+  renderSettings();
+  openModal(settingsModal);
 }
 
 // ============================================================
@@ -650,7 +812,7 @@ function goNext() {
     fErr.textContent = '設置している台を1つ以上選んでください。';
     return;
   }
-  if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+  blurActive();
   setStep(2);
 }
 
@@ -904,20 +1066,36 @@ storeSelect.addEventListener('change', function () {
   saveState();
   renderActions();
   renderTabs();
-  calc();
+  renderMeta();
+  runCalc(false); // 店舗の切替はアニメなしで即表示
 });
 
+// 入力しただけでは結果を変えない（計算ボタンで更新）
 medalsEl.addEventListener('input', function () {
   state.medals = medalsEl.value;
   saveState();
-  calc();
+  renderInputState();
+});
+
+// キーボードの確定キーでも計算
+medalsEl.addEventListener('keydown', function (e) {
+  if (e.key === 'Enter' && !e.isComposing) {
+    e.preventDefault();
+    blurActive();
+    runCalc(true);
+  }
+});
+
+calcBtn.addEventListener('click', function () {
+  blurActive();
+  runCalc(true);
 });
 
 clearBtn.addEventListener('click', function () {
   medalsEl.value = '';
   state.medals = '';
   saveState();
-  calc();
+  renderInputState();
   medalsEl.focus();
 });
 
@@ -936,12 +1114,25 @@ fName.addEventListener('input', function () { fErr.textContent = ''; });
 fName.addEventListener('keydown', function (e) {
   if (e.key === 'Enter' && !e.isComposing) {
     e.preventDefault();
-    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+    blurActive();
   }
 });
 
 bellBtn.addEventListener('click', openNews);
 newsClose.addEventListener('click', function () { closeModal(newsModal); });
+
+settingsBtn.addEventListener('click', openSettings);
+settingsClose.addEventListener('click', function () { closeModal(settingsModal); });
+animToggle.addEventListener('click', function () {
+  settings.anim = !settings.anim;
+  saveSettings();
+  renderSettings();
+  if (!settings.anim && animFrame) {
+    // OFFにしたらアニメ途中の数字をすぐ確定
+    runCalc(false);
+  }
+  showToast('カウントアニメを' + (settings.anim ? 'ON' : 'OFF') + 'にしました');
+});
 
 exportBtn.addEventListener('click', exportData);
 importBtn.addEventListener('click', function () { importFile.click(); });
@@ -962,7 +1153,7 @@ guideImg.addEventListener('error', showGuideFallback);
 guideImg.addEventListener('load', showGuideImage);
 
 // 背景タップで閉じる（入力中のフォームは誤タップ防止のため対象外）
-[newsModal, importModal].forEach(function (m) {
+[newsModal, importModal, settingsModal].forEach(function (m) {
   m.addEventListener('click', function (e) {
     if (e.target !== m) return;
     if (m === importModal) pendingImport = null;
@@ -977,6 +1168,8 @@ document.addEventListener('keydown', function (e) {
     closeModal(importModal);
   } else if (!newsModal.classList.contains('hidden')) {
     closeModal(newsModal);
+  } else if (!settingsModal.classList.contains('hidden')) {
+    closeModal(settingsModal);
   } else if (!formModal.classList.contains('hidden')) {
     closeForm();
   }
@@ -1011,5 +1204,6 @@ if (guideImg.complete) {
   if (guideImg.naturalWidth === 0) showGuideFallback();
   else showGuideImage();
 }
-renderAll();
+renderAll();      // 起動時は保存済みの枚数でアニメなし表示
 renderBadge();
+renderSettings();

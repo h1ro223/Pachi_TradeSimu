@@ -5,9 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0e0c1d">
 <title>換金計算ツール</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap">
 <link rel="stylesheet" href="./style.css">
 </head>
 <body>
@@ -17,36 +14,35 @@
     <span class="brand-mark" aria-hidden="true"></span>
     <h1>換金計算ツール</h1>
   </div>
-  <button type="button" id="bellBtn" class="bell" aria-label="お知らせ">
-    <span aria-hidden="true">🔔</span>
-    <span id="bellBadge" class="badge hidden">0</span>
-  </button>
+  <div class="top-actions">
+    <button type="button" id="bellBtn" class="icon-btn" aria-label="お知らせ">
+      <span aria-hidden="true">🔔</span>
+      <span id="bellBadge" class="badge hidden">0</span>
+    </button>
+    <button type="button" id="settingsBtn" class="icon-btn" aria-label="設定">
+      <span aria-hidden="true">⚙️</span>
+    </button>
+  </div>
 </header>
 
 <main>
 
-  <!-- 店舗 -->
+  <!-- 店舗・台の種類 -->
   <section class="panel">
-    <label for="storeSelect" class="field-label">店舗</label>
     <div class="select-wrap">
-      <select id="storeSelect"></select>
+      <select id="storeSelect" aria-label="店舗"></select>
     </div>
     <div class="store-actions">
-      <button type="button" id="addBtn" class="btn btn-primary">＋ マイホ追加</button>
-      <button type="button" id="editBtn" class="btn btn-ghost">編集</button>
-      <button type="button" id="delBtn" class="btn btn-danger">削除</button>
+      <button type="button" id="addBtn" class="btn btn-primary btn-sm">＋ マイホ追加</button>
+      <button type="button" id="editBtn" class="btn btn-ghost btn-sm">編集</button>
+      <button type="button" id="delBtn" class="btn btn-danger btn-sm">削除</button>
     </div>
-  </section>
-
-  <!-- 台の種類 -->
-  <section class="panel">
-    <p class="field-label">台の種類</p>
-    <div id="typeTabs" class="tabs" role="tablist"></div>
+    <div id="typeTabs" class="tabs" role="tablist" aria-label="台の種類"></div>
     <p class="info" id="info"></p>
   </section>
 
   <!-- カウンター -->
-  <section class="counter" aria-live="polite">
+  <section class="counter" id="counter" aria-live="polite">
     <div class="lamps" aria-hidden="true"></div>
     <p class="counter-label">持ち帰れる金額</p>
     <p class="counter-main"><span id="yen">0</span><small>円</small></p>
@@ -65,25 +61,50 @@
   <!-- 入力 -->
   <section class="panel">
     <label for="medals" class="field-label" id="medalsLabel">今の持ちメダル枚数</label>
-    <div class="medal-input">
-      <input id="medals" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="例：530">
-      <button type="button" id="clearBtn" class="clear" aria-label="入力を消す">×</button>
+    <div class="calc-row">
+      <div class="medal-input">
+        <input id="medals" type="text" inputmode="numeric" pattern="[0-9]*" enterkeyhint="done" autocomplete="off" placeholder="例：530">
+        <button type="button" id="clearBtn" class="clear" aria-label="入力を消す">×</button>
+      </div>
+      <button type="button" id="calcBtn" class="btn btn-primary calc-btn">計算</button>
     </div>
     <p class="note" id="note"></p>
   </section>
 
-  <!-- バックアップ -->
-  <section class="panel backup">
-    <p class="field-label">バックアップ</p>
-    <p class="backup-text">登録したマイホはこの端末だけに保存されます。消えたときのために書き出しておくと安心です。</p>
-    <div class="backup-actions">
-      <button type="button" id="exportBtn" class="btn btn-ghost">書き出し（JSON）</button>
-      <button type="button" id="importBtn" class="btn btn-ghost">読み込み</button>
-    </div>
-    <input type="file" id="importFile" accept=".json,application/json" hidden>
-  </section>
-
 </main>
+
+<!-- ===== 設定 ===== -->
+<div id="settingsModal" class="modal hidden" aria-hidden="true">
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+    <div class="sheet-head">
+      <h2 id="settingsTitle">設定</h2>
+    </div>
+
+    <div class="setting-item">
+      <div class="setting-text">
+        <p class="setting-name">カウントアニメ</p>
+        <p class="setting-desc">計算したとき、金額が数字を刻みながら変わります</p>
+      </div>
+      <button type="button" id="animToggle" class="switch" role="switch" aria-checked="true" aria-label="カウントアニメ">
+        <span class="switch-knob"></span>
+      </button>
+    </div>
+
+    <div class="setting-item column">
+      <p class="setting-name">バックアップ</p>
+      <p class="setting-desc">登録したマイホはこの端末だけに保存されます。消えたときのために書き出しておくと安心です。</p>
+      <div class="backup-actions">
+        <button type="button" id="exportBtn" class="btn btn-ghost">書き出し（JSON）</button>
+        <button type="button" id="importBtn" class="btn btn-ghost">読み込み</button>
+      </div>
+      <input type="file" id="importFile" accept=".json,application/json" hidden>
+    </div>
+
+    <div class="sheet-actions">
+      <button type="button" id="settingsClose" class="btn btn-primary">閉じる</button>
+    </div>
+  </div>
+</div>
 
 <!-- ===== マイホ追加・編集フォーム ===== -->
 <div id="formModal" class="modal hidden" aria-hidden="true">
@@ -100,7 +121,7 @@
         <p class="guide-title">入力のしかた</p>
         <p>マイホの情報は <a href="https://minpachi.com" target="_blank" rel="noopener">みんパチ</a> で店舗名を検索して、次のページの画像を参考に数値を入力してください。</p>
         <p class="guide-small">※みんパチに登録されていない店舗もあります。その場合はホールの掲示を確認してください。</p>
-        <a class="btn btn-ghost btn-block" href="https://minpachi.com" target="_blank" rel="noopener">みんパチを開く</a>
+        <a class="btn btn-ghost btn-block btn-sm" href="https://minpachi.com" target="_blank" rel="noopener">みんパチを開く</a>
       </div>
 
       <label for="fName" class="field-label">店舗名</label>
