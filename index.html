@@ -108,6 +108,19 @@
     </div>
 
     <div class="setting-item column">
+      <label for="browserSelect" class="setting-name">みんパチを開くブラウザ</label>
+      <p class="setting-desc">iPhoneのホーム画面から使うとき、みんパチを別のアプリで開けます。うまく開けないときは「標準」に戻してください。</p>
+      <div class="select-wrap setting-select">
+        <select id="browserSelect">
+          <option value="std">標準（そのまま開く）</option>
+          <option value="safari">Safari</option>
+          <option value="chrome">Chrome</option>
+          <option value="brave">Brave</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="setting-item column">
       <p class="setting-name">バックアップ</p>
       <p class="setting-desc">登録したマイホはこの端末だけに保存されます。消えたときのために書き出しておくと安心です。</p>
       <div class="backup-actions">
@@ -136,9 +149,9 @@
     <div id="step1" class="step">
       <div class="guide">
         <p class="guide-title">入力のしかた</p>
-        <p>マイホの情報は <a href="https://minpachi.com" target="_blank" rel="noopener">みんパチ</a> で店舗名を検索して、次のページの画像を参考に数値を入力してください。</p>
+        <p>マイホの情報は <a class="minpachi-link" href="https://minpachi.com/" target="_blank" rel="noopener">みんパチ</a> で店舗名を検索して、次のページの画像を参考に数値を入力してください。</p>
         <p class="guide-small">※みんパチに登録されていない店舗もあります。その場合はホールの掲示を確認してください。</p>
-        <a class="btn btn-ghost btn-block btn-sm" href="https://minpachi.com" target="_blank" rel="noopener">みんパチを開く</a>
+        <a class="btn btn-ghost btn-block btn-sm minpachi-link" href="https://minpachi.com/" target="_blank" rel="noopener">みんパチを開く</a>
       </div>
 
       <label for="fName" class="field-label">店舗名</label>
@@ -160,6 +173,8 @@
           <figcaption id="guideFallback" class="guide-fallback hidden">ガイド画像は準備中です。店舗ページの「遊技料金」と「交換率(換金率)」の欄を見てください。</figcaption>
         </figure>
         <p class="guide-small">交換率は「100円あたり何枚（何玉）か」を入力します。景品は500円単位で計算します。</p>
+        <p class="guide-small">入力途中の内容は自動で保存されるので、みんパチを見に行って戻ってきても続きから入力できます。</p>
+        <a class="btn btn-ghost btn-block btn-sm minpachi-link" href="https://minpachi.com/" target="_blank" rel="noopener">みんパチを開く</a>
       </div>
       <div id="fDetails"></div>
     </div>

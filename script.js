@@ -36,6 +36,16 @@ const BUILTIN_STORES = [
 // id は一度決めたら変えない（既読管理に使う）
 const NEWS = [
   {
+    id: '2026-10-09-feature-5',
+    type: 'feature',
+    date: '2026-10-09',
+    items: [
+      'マイホ登録の入力途中の内容を自動保存（みんパチから戻っても続きから入力できます）',
+      'みんパチを開くブラウザを設定で選択（標準／Safari／Chrome／Brave）',
+      '登録フォーム2ページ目にも「みんパチを開く」ボタンを追加'
+    ]
+  },
+  {
     id: '2026-10-09-feature-4',
     type: 'feature',
     date: '2026-10-09',
@@ -93,6 +103,12 @@ const LS_STORES = 'kankin_custom_stores_v1';
 const LS_STATE = 'kankin_state_v1';
 const LS_NEWS = 'kankin_news_seen_v1';
 const LS_SETTINGS = 'kankin_settings_v1';
+const LS_DRAFT = 'kankin_form_draft_v1';
+const DRAFT_TTL_MS = 24 * 60 * 60 * 1000; // 下書きの保存期間（24時間）
+
+// みんパチ
+const MINPACHI_URL = 'https://minpachi.com/';
+const BROWSERS = ['std', 'safari', 'chrome', 'brave'];
 const EXPORT_APP = 'kankin-calculator';
 const EXPORT_VERSION = 1;
 
@@ -125,6 +141,7 @@ const settingsBtn = $('settingsBtn');
 const settingsModal = $('settingsModal');
 const settingsClose = $('settingsClose');
 const animToggle = $('animToggle');
+const browserSelect = $('browserSelect');
 
 const exportBtn = $('exportBtn');
 const importBtn = $('importBtn');
@@ -334,12 +351,15 @@ function loadSettings() {
   try {
     reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   } catch (e) { reduce = false; }
-  const def = { anim: !reduce };
+  const def = { anim: !reduce, browser: 'std' };
 
   try {
     const s = JSON.parse(localStorage.getItem(LS_SETTINGS) || 'null');
     if (!s || typeof s !== 'object') return def;
-    return { anim: typeof s.anim === 'boolean' ? s.anim : def.anim };
+    return {
+      anim: typeof s.anim === 'boolean' ? s.anim : def.anim,
+      browser: BROWSERS.indexOf(s.browser) !== -1 ? s.browser : def.browser
+    };
   } catch (e) {
     return def;
   }
@@ -579,6 +599,32 @@ function closeModal(el) {
 // ============================================================
 function renderSettings() {
   animToggle.setAttribute('aria-checked', settings.anim ? 'true' : 'false');
+  browserSelect.value = settings.browser;
+}
+
+// ============================================================
+//  みんパチを開く（ブラウザ指定）
+// ============================================================
+function isIOS() {
+  const ua = navigator.userAgent || '';
+  return /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
+// 各ブラウザで開くための特殊リンク（非公式の仕組みなのでiOSのみで使う）
+function browserUrl(url, browser) {
+  if (browser === 'safari') return 'x-safari-' + url;                       // x-safari-https://...
+  if (browser === 'chrome') return url.replace(/^https:\/\//, 'googlechromes://');
+  if (browser === 'brave') return 'brave://open-url?url=' + encodeURIComponent(url);
+  return null;
+}
+
+function onMinpachiClick(e) {
+  saveDraft(); // 画面が切り替わっても続きから入力できるように
+  if (settings.browser === 'std' || !isIOS()) return; // 標準・PCはそのまま
+  const special = browserUrl(MINPACHI_URL, settings.browser);
+  if (!special) return;
+  e.preventDefault();
+  window.location.href = special;
 }
 
 function openSettings() {
@@ -690,6 +736,7 @@ function buildChips() {
       formSelected[t.key] = !formSelected[t.key];
       b.setAttribute('aria-pressed', formSelected[t.key] ? 'true' : 'false');
       fErr.textContent = '';
+      saveDraft();
     });
     fTypeChips.appendChild(b);
   });
@@ -798,6 +845,7 @@ function setStep(step) {
   }
 
   formModal.querySelector('.sheet').scrollTop = 0;
+  saveDraft();
 }
 
 function openForm(store) {
@@ -822,6 +870,103 @@ function openForm(store) {
 function closeForm() {
   closeModal(formModal);
   editingId = null;
+  clearDraft(); // 保存・キャンセルで閉じたら下書きは不要
+}
+
+// ============================================================
+//  フォームの下書き（自動保存・復元）
+// ============================================================
+function isFormOpen() {
+  return !formModal.classList.contains('hidden');
+}
+
+function saveDraft() {
+  if (!isFormOpen()) return;
+  const values = {};
+  const blocks = fDetails.querySelectorAll('.detail-block');
+  for (let i = 0; i < blocks.length; i++) {
+    values[blocks[i].dataset.key] = {
+      price: blocks[i].querySelector('[data-role="price"]').value,
+      rate: blocks[i].querySelector('[data-role="rate"]').value
+    };
+  }
+  const selected = {};
+  TYPES.forEach(function (t) { if (formSelected[t.key]) selected[t.key] = true; });
+
+  const draft = {
+    v: 1,
+    savedAt: Date.now(),
+    editingId: editingId,
+    step: formStep,
+    name: fName.value,
+    selected: selected,
+    values: values
+  };
+  try {
+    localStorage.setItem(LS_DRAFT, JSON.stringify(draft));
+  } catch (e) { /* 保存できなくてもフォームは使える */ }
+}
+
+function clearDraft() {
+  try {
+    localStorage.removeItem(LS_DRAFT);
+  } catch (e) { /* 何もしない */ }
+}
+
+function loadDraft() {
+  try {
+    const d = JSON.parse(localStorage.getItem(LS_DRAFT) || 'null');
+    if (!d || typeof d !== 'object' || d.v !== 1) return null;
+    if (typeof d.savedAt !== 'number' || Date.now() - d.savedAt > DRAFT_TTL_MS || d.savedAt > Date.now() + 60000) {
+      clearDraft();
+      return null;
+    }
+    return d;
+  } catch (e) {
+    clearDraft();
+    return null;
+  }
+}
+
+// 起動時に下書きがあればフォームを開き直して復元
+function restoreDraft() {
+  const d = loadDraft();
+  if (!d) return;
+
+  // 編集中だった店舗が消えていたら新規追加として復元
+  let store = null;
+  if (typeof d.editingId === 'string') {
+    for (let i = 0; i < customStores.length; i++) {
+      if (customStores[i].id === d.editingId) { store = customStores[i]; break; }
+    }
+  }
+
+  openForm(store);
+
+  fName.value = typeof d.name === 'string' ? d.name.slice(0, 30) : fName.value;
+
+  if (d.selected && typeof d.selected === 'object') {
+    formSelected = {};
+    TYPES.forEach(function (t) { if (d.selected[t.key] === true) formSelected[t.key] = true; });
+    buildChips();
+  }
+
+  if (d.values && typeof d.values === 'object') {
+    const blocks = fDetails.querySelectorAll('.detail-block');
+    for (let i = 0; i < blocks.length; i++) {
+      const v = d.values[blocks[i].dataset.key];
+      if (!v || typeof v !== 'object') continue;
+      const price = blocks[i].querySelector('[data-role="price"]');
+      const rate = blocks[i].querySelector('[data-role="rate"]');
+      if (typeof v.price === 'string') price.value = v.price.slice(0, 12);
+      if (typeof v.rate === 'string') rate.value = v.rate.slice(0, 12);
+      price.dispatchEvent(new Event('input')); // 「交換率（○○スロ）」の表示を更新
+    }
+  }
+
+  const hasSelected = TYPES.some(function (t) { return formSelected[t.key]; });
+  setStep(d.step === 2 && fName.value.trim() && hasSelected ? 2 : 1);
+  showToast('入力途中の内容を復元しました');
 }
 
 function goNext() {
@@ -1189,6 +1334,29 @@ newsClose.addEventListener('click', function () { closeModal(newsModal); });
 
 settingsBtn.addEventListener('click', openSettings);
 settingsClose.addEventListener('click', function () { closeModal(settingsModal); });
+browserSelect.addEventListener('change', function () {
+  if (BROWSERS.indexOf(browserSelect.value) === -1) return;
+  settings.browser = browserSelect.value;
+  saveSettings();
+  const label = browserSelect.options[browserSelect.selectedIndex].textContent;
+  showToast('みんパチを「' + label + '」で開くようにしました');
+});
+
+// みんパチのリンク（1ページ目・2ページ目）
+const minpachiLinks = document.querySelectorAll('.minpachi-link');
+for (let i = 0; i < minpachiLinks.length; i++) {
+  minpachiLinks[i].addEventListener('click', onMinpachiClick);
+}
+
+// フォームの入力内容はその都度下書き保存
+formModal.addEventListener('input', saveDraft);
+
+// アプリを離れる・切り替える瞬間にも保存
+window.addEventListener('pagehide', saveDraft);
+document.addEventListener('visibilitychange', function () {
+  if (document.visibilityState === 'hidden') saveDraft();
+});
+
 animToggle.addEventListener('click', function () {
   settings.anim = !settings.anim;
   saveSettings();
@@ -1281,3 +1449,4 @@ if (guideImg.complete) {
 renderAll();      // 起動時は保存済みの枚数でアニメなし表示
 renderBadge();
 renderSettings();
+restoreDraft();   // 入力途中のフォームがあれば続きから

@@ -648,7 +648,12 @@ select {
   min-width: 0;
 }
 
+.setting-select {
+  margin-top: 10px;
+}
+
 .setting-name {
+  display: block;
   margin: 0 0 3px;
   font-size: 15px;
   font-weight: 700;
