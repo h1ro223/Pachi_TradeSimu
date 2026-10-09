@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>換金計算ツール</title>
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<main>
+  <h1>換金計算ツール</h1>
+  <p class="sub">大東洋本店（5.2枚交換）</p>
+
+  <label for="medals">今の持ちメダル枚数</label>
+  <input id="medals" type="number" inputmode="numeric" pattern="[0-9]*" placeholder="例：530">
+
+  <div class="result">
+    <div class="box">
+      <span>持ち帰れる金額</span>
+      <strong id="yen">0円</strong>
+    </div>
+    <div class="box">
+      <span>余り</span>
+      <strong id="rest">0枚</strong>
+    </div>
+  </div>
+  <p class="note" id="note">500円 = 26枚単位で計算</p>
+</main>
+
+<footer>
+  made by hiro/ヒロ ・ <a href="https://github.com/h1ro223" target="_blank" rel="noopener">GitHub</a>
+</footer>
+<script src="./script.js"></script>
+</body>
+</html>
