@@ -36,6 +36,15 @@ const BUILTIN_STORES = [
 // id は一度決めたら変えない（既読管理に使う）
 const NEWS = [
   {
+    id: '2026-10-09-feature-6',
+    type: 'feature',
+    date: '2026-10-09',
+    items: [
+      'ホーム画面アプリで使うとき、みんパチをSafariアプリで開き直す方法（右下のコンパスマーク）を案内',
+      '効果がなかった「みんパチを開くブラウザ」の設定を削除'
+    ]
+  },
+  {
     id: '2026-10-09-feature-5',
     type: 'feature',
     date: '2026-10-09',
@@ -107,8 +116,7 @@ const LS_DRAFT = 'kankin_form_draft_v1';
 const DRAFT_TTL_MS = 24 * 60 * 60 * 1000; // 下書きの保存期間（24時間）
 
 // みんパチ
-const MINPACHI_URL = 'https://minpachi.com/';
-const BROWSERS = ['std', 'safari', 'chrome', 'brave'];
+const LS_TIP = 'kankin_compass_tip_seen_v1'; // コンパス案内を見たか
 const EXPORT_APP = 'kankin-calculator';
 const EXPORT_VERSION = 1;
 
@@ -141,7 +149,9 @@ const settingsBtn = $('settingsBtn');
 const settingsModal = $('settingsModal');
 const settingsClose = $('settingsClose');
 const animToggle = $('animToggle');
-const browserSelect = $('browserSelect');
+const tipModal = $('tipModal');
+const tipOpen = $('tipOpen');
+const tipCancel = $('tipCancel');
 
 const exportBtn = $('exportBtn');
 const importBtn = $('importBtn');
@@ -351,15 +361,12 @@ function loadSettings() {
   try {
     reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   } catch (e) { reduce = false; }
-  const def = { anim: !reduce, browser: 'std' };
+  const def = { anim: !reduce };
 
   try {
     const s = JSON.parse(localStorage.getItem(LS_SETTINGS) || 'null');
     if (!s || typeof s !== 'object') return def;
-    return {
-      anim: typeof s.anim === 'boolean' ? s.anim : def.anim,
-      browser: BROWSERS.indexOf(s.browser) !== -1 ? s.browser : def.browser
-    };
+    return { anim: typeof s.anim === 'boolean' ? s.anim : def.anim };
   } catch (e) {
     return def;
   }
@@ -599,32 +606,40 @@ function closeModal(el) {
 // ============================================================
 function renderSettings() {
   animToggle.setAttribute('aria-checked', settings.anim ? 'true' : 'false');
-  browserSelect.value = settings.browser;
 }
 
 // ============================================================
-//  みんパチを開く（ブラウザ指定）
+//  みんパチを開く（ホーム画面アプリではコンパスマークを案内）
 // ============================================================
-function isIOS() {
-  const ua = navigator.userAgent || '';
-  return /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+// iPhoneのホーム画面から起動しているか
+function isStandalone() {
+  try {
+    return window.navigator.standalone === true ||
+      (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+  } catch (e) {
+    return false;
+  }
 }
 
-// 各ブラウザで開くための特殊リンク（非公式の仕組みなのでiOSのみで使う）
-function browserUrl(url, browser) {
-  if (browser === 'safari') return 'x-safari-' + url;                       // x-safari-https://...
-  if (browser === 'chrome') return url.replace(/^https:\/\//, 'googlechromes://');
-  if (browser === 'brave') return 'brave://open-url?url=' + encodeURIComponent(url);
-  return null;
+function tipSeen() {
+  try {
+    return localStorage.getItem(LS_TIP) === '1';
+  } catch (e) {
+    return true; // 保存できない環境では毎回出さない
+  }
+}
+
+function markTipSeen() {
+  try {
+    localStorage.setItem(LS_TIP, '1');
+  } catch (e) { /* 何もしない */ }
 }
 
 function onMinpachiClick(e) {
   saveDraft(); // 画面が切り替わっても続きから入力できるように
-  if (settings.browser === 'std' || !isIOS()) return; // 標準・PCはそのまま
-  const special = browserUrl(MINPACHI_URL, settings.browser);
-  if (!special) return;
+  if (!isStandalone() || tipSeen()) return; // 通常はそのまま開く
   e.preventDefault();
-  window.location.href = special;
+  openModal(tipModal); // 初回だけ案内を出してから開く
 }
 
 function openSettings() {
@@ -1334,13 +1349,13 @@ newsClose.addEventListener('click', function () { closeModal(newsModal); });
 
 settingsBtn.addEventListener('click', openSettings);
 settingsClose.addEventListener('click', function () { closeModal(settingsModal); });
-browserSelect.addEventListener('change', function () {
-  if (BROWSERS.indexOf(browserSelect.value) === -1) return;
-  settings.browser = browserSelect.value;
-  saveSettings();
-  const label = browserSelect.options[browserSelect.selectedIndex].textContent;
-  showToast('みんパチを「' + label + '」で開くようにしました');
+// コンパス案内：「みんパチを開く」はリンクそのものなので、そのまま開く
+tipOpen.addEventListener('click', function () {
+  markTipSeen();
+  saveDraft();
+  closeModal(tipModal);
 });
+tipCancel.addEventListener('click', function () { closeModal(tipModal); });
 
 // みんパチのリンク（1ページ目・2ページ目）
 const minpachiLinks = document.querySelectorAll('.minpachi-link');
@@ -1403,7 +1418,9 @@ zoomScroll.addEventListener('click', function (e) {
 
 document.addEventListener('keydown', function (e) {
   if (e.key !== 'Escape') return;
-  if (!zoomModal.classList.contains('hidden')) {
+  if (!tipModal.classList.contains('hidden')) {
+    closeModal(tipModal);
+  } else if (!zoomModal.classList.contains('hidden')) {
     closeZoom();
   } else if (!importModal.classList.contains('hidden')) {
     pendingImport = null;
@@ -1447,6 +1464,7 @@ if (guideImg.complete) {
   else showGuideImage();
 }
 renderAll();      // 起動時は保存済みの枚数でアニメなし表示
+if (isStandalone()) document.body.classList.add('is-standalone');
 renderBadge();
 renderSettings();
 restoreDraft();   // 入力途中のフォームがあれば続きから

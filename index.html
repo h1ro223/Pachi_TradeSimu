@@ -108,19 +108,6 @@
     </div>
 
     <div class="setting-item column">
-      <label for="browserSelect" class="setting-name">みんパチを開くブラウザ</label>
-      <p class="setting-desc">iPhoneのホーム画面から使うとき、みんパチを別のアプリで開けます。うまく開けないときは「標準」に戻してください。</p>
-      <div class="select-wrap setting-select">
-        <select id="browserSelect">
-          <option value="std">標準（そのまま開く）</option>
-          <option value="safari">Safari</option>
-          <option value="chrome">Chrome</option>
-          <option value="brave">Brave</option>
-        </select>
-      </div>
-    </div>
-
-    <div class="setting-item column">
       <p class="setting-name">バックアップ</p>
       <p class="setting-desc">登録したマイホはこの端末だけに保存されます。消えたときのために書き出しておくと安心です。</p>
       <div class="backup-actions">
@@ -152,6 +139,7 @@
         <p>マイホの情報は <a class="minpachi-link" href="https://minpachi.com/" target="_blank" rel="noopener">みんパチ</a> で店舗名を検索して、次のページの画像を参考に数値を入力してください。</p>
         <p class="guide-small">※みんパチに登録されていない店舗もあります。その場合はホールの掲示を確認してください。</p>
         <a class="btn btn-ghost btn-block btn-sm minpachi-link" href="https://minpachi.com/" target="_blank" rel="noopener">みんパチを開く</a>
+        <p class="compass-note standalone-only"><svg class="compass-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15.5 8.5l-2 5-5 2 2-5z" fill="currentColor"/></svg><span>開いたら右下のコンパスマークを押すと、Safariアプリで開き直せます。アプリを切り替えながら数値を見比べられます。</span></p>
       </div>
 
       <label for="fName" class="field-label">店舗名</label>
@@ -175,6 +163,7 @@
         <p class="guide-small">交換率は「100円あたり何枚（何玉）か」を入力します。景品は500円単位で計算します。</p>
         <p class="guide-small">入力途中の内容は自動で保存されるので、みんパチを見に行って戻ってきても続きから入力できます。</p>
         <a class="btn btn-ghost btn-block btn-sm minpachi-link" href="https://minpachi.com/" target="_blank" rel="noopener">みんパチを開く</a>
+        <p class="compass-note standalone-only"><svg class="compass-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15.5 8.5l-2 5-5 2 2-5z" fill="currentColor"/></svg><span>開いたら右下のコンパスマークを押すと、Safariアプリで開き直せます。</span></p>
       </div>
       <div id="fDetails"></div>
     </div>
@@ -226,6 +215,30 @@
   </div>
   <button type="button" id="zoomClose" class="zoom-close" aria-label="閉じる">×</button>
   <p class="zoom-hint">スワイプで移動・画像タップで全体表示／拡大</p>
+</div>
+
+<!-- ===== みんパチを開く前の案内（ホーム画面アプリで初回のみ） ===== -->
+<div id="tipModal" class="modal tip hidden" aria-hidden="true">
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="tipTitle">
+    <div class="sheet-head">
+      <h2 id="tipTitle">みんパチを開く前に</h2>
+    </div>
+    <p class="tip-text">みんパチはアプリの中の画面で開きます。開いたら、<strong>右下のコンパスマーク</strong>を押してください。</p>
+    <div class="tip-visual" aria-hidden="true">
+      <span class="tip-pill">
+        <span class="tip-icon">‹</span>
+        <span class="tip-icon">⇧</span>
+        <span class="tip-icon">↻</span>
+        <span class="tip-icon tip-target"><svg class="compass-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15.5 8.5l-2 5-5 2 2-5z" fill="currentColor"/></svg></span>
+      </span>
+    </div>
+    <p class="tip-text">Safariアプリで開き直されるので、このアプリと切り替えながら数値を見比べられます。入力途中の内容は自動で保存されています。</p>
+    <p class="tip-small">この案内は最初の1回だけ表示されます。</p>
+    <div class="sheet-actions">
+      <button type="button" id="tipCancel" class="btn btn-ghost">キャンセル</button>
+      <a id="tipOpen" class="btn btn-primary" href="https://minpachi.com/" target="_blank" rel="noopener">みんパチを開く</a>
+    </div>
+  </div>
 </div>
 
 <div id="toast" class="toast" role="status" aria-live="polite"></div>

@@ -648,10 +648,6 @@ select {
   min-width: 0;
 }
 
-.setting-select {
-  margin-top: 10px;
-}
-
 .setting-name {
   display: block;
   margin: 0 0 3px;
@@ -870,6 +866,107 @@ select {
   text-align: center;
   border: 1px dashed var(--line);
   border-radius: 10px;
+}
+
+/* ===== コンパスマークの案内 ===== */
+.standalone-only {
+  display: none !important;
+}
+
+body.is-standalone .standalone-only {
+  display: flex !important;
+}
+
+.compass-note {
+  align-items: flex-start;
+  gap: 6px;
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--gold);
+}
+
+.compass-ico {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+}
+
+.tip-text {
+  margin: 0 0 12px;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.tip-text strong {
+  color: var(--gold);
+}
+
+.tip-small {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
+}
+
+/* Safariの下部ツールバーを模した図 */
+.tip-visual {
+  display: flex;
+  justify-content: flex-end;
+  margin: 0 0 14px;
+  padding: 16px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px dashed var(--line);
+  border-radius: 14px;
+}
+
+.tip-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 18px;
+  padding: 8px 16px;
+  background: #e9e9ee;
+  border-radius: 999px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+}
+
+.tip-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1;
+  color: #333;
+}
+
+.tip-icon .compass-ico {
+  width: 24px;
+  height: 24px;
+  margin: 0;
+}
+
+.tip-target {
+  position: relative;
+  color: #111;
+}
+
+.tip-target::after {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  border: 3px solid var(--pink);
+  border-radius: 50%;
+  box-shadow: 0 0 12px var(--pink);
+  animation: tipPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes tipPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.15); opacity: 0.6; }
 }
 
 /* ===== 台の選択チップ ===== */
