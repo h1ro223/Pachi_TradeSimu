@@ -49,6 +49,10 @@
     <div class="select-wrap">
       <select id="storeSelect" aria-label="店舗"></select>
     </div>
+    <a id="storeLink" class="store-link minpachi-link hidden" href="https://minpachi.com/" target="_blank" rel="noopener">
+      <span class="store-link-name"><span aria-hidden="true">📍</span><span id="storeLinkName"></span></span>
+      <span class="store-link-go">みんパチで見る ›</span>
+    </a>
     <div class="store-actions">
       <button type="button" id="addBtn" class="btn btn-primary">＋ マイホ追加</button>
       <button type="button" id="editBtn" class="btn btn-ghost">編集</button>
@@ -165,6 +169,10 @@
       <label for="fName" class="field-label">店舗名</label>
       <input id="fName" type="text" maxlength="30" autocomplete="off" placeholder="例：〇〇駅前店">
 
+      <label for="fUrl" class="field-label">みんパチのURL（任意）</label>
+      <input id="fUrl" type="text" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="off" maxlength="300" placeholder="https://minpachi.com/〇〇/">
+      <p class="field-hint">入れておくと、店名からみんパチの店舗ページを開けます。</p>
+
       <p class="field-label">設置している台（複数選択できます）</p>
       <div id="fTypeChips" class="chips"></div>
     </div>
@@ -186,6 +194,11 @@
         <p class="compass-note standalone-only"><svg class="compass-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15.5 8.5l-2 5-5 2 2-5z" fill="currentColor"/></svg><span>開いたら右下のコンパスマークを押すと、Safariアプリで開き直せます。</span></p>
       </div>
       <div id="fDetails"></div>
+      <div id="fOtherWrap" class="other-wrap hidden">
+        <p class="other-title">その他の台</p>
+        <div id="fOthers"></div>
+        <button type="button" id="addOtherBtn" class="btn btn-ghost btn-block btn-sm">＋ その他の台を追加</button>
+      </div>
     </div>
 
     <p class="err" id="fErr" role="alert"></p>

@@ -457,7 +457,7 @@ select {
 .store-actions {
   display: flex;
   gap: 6px;
-  margin: 8px 0 10px;
+  margin: 6px 0 10px;
 }
 
 .store-actions .btn {
@@ -471,17 +471,27 @@ select {
 
 /* ===== 台の種類タブ ===== */
 .tabs {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  position: relative;
+  display: flex;
   gap: 3px;
   padding: 3px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
   background: var(--panel-2);
   border: 1px solid var(--line);
   border-radius: 12px;
 }
 
+.tabs::-webkit-scrollbar {
+  display: none;
+}
+
 .tab {
-  padding: 8px 2px;
+  flex: 1 0 auto;
+  min-width: 56px;
+  white-space: nowrap;
+  padding: 8px 6px;
   font-size: 13px;
   font-family: inherit;
   font-weight: 700;
@@ -490,6 +500,11 @@ select {
   border: none;
   border-radius: 9px;
   cursor: pointer;
+}
+
+.tabs.many .tab {
+  min-width: 58px;
+  font-size: 12px;
 }
 
 .tab.active {
@@ -810,7 +825,138 @@ select {
 }
 
 .step #fName {
-  margin-bottom: 14px;
+  margin-bottom: 12px;
+}
+
+.field-hint {
+  margin: 4px 0 14px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* 選んだ店のみんパチページへのリンク */
+.store-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 6px;
+  padding: 5px 10px;
+  font-size: 12px;
+  text-decoration: none;
+  color: var(--text);
+  background: rgba(69, 227, 255, 0.06);
+  border: 1px solid rgba(69, 227, 255, 0.28);
+  border-radius: 10px;
+}
+
+.store-link.hidden {
+  display: none;
+}
+
+.store-link-name {
+  display: flex;
+  gap: 4px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-weight: 700;
+}
+
+.store-link-name span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.store-link-go {
+  flex-shrink: 0;
+  font-weight: 700;
+  color: var(--cyan);
+}
+
+.store-link:active {
+  background: rgba(69, 227, 255, 0.14);
+}
+
+.store-link:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+/* 「その他」チップは横いっぱい */
+.chip-other {
+  grid-column: 1 / -1;
+}
+
+/* その他の台 */
+.other-wrap.hidden {
+  display: none;
+}
+
+.other-title {
+  margin: 4px 0 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gold);
+}
+
+.other-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.seg {
+  display: inline-flex;
+  padding: 3px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.seg-btn {
+  padding: 6px 12px;
+  font-size: 13px;
+  font-family: inherit;
+  font-weight: 700;
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.seg-btn[aria-pressed="true"] {
+  color: #1a1305;
+  background: var(--gold);
+}
+
+.seg-btn:focus-visible,
+.other-del:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+.other-del {
+  padding: 6px 10px;
+  font-size: 12px;
+  font-family: inherit;
+  font-weight: 700;
+  color: var(--red);
+  background: transparent;
+  border: 1px solid rgba(255, 107, 125, 0.4);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.other-block .detail-grid {
+  margin-top: 10px;
+}
+
+#addOtherBtn {
+  margin-bottom: 8px;
 }
 
 /* ===== 設定 ===== */
@@ -1400,7 +1546,7 @@ body.is-standalone .standalone-only {
 /* ===== フッター ===== */
 footer {
   margin-top: auto;
-  padding: 14px 0 10px;
+  padding: 8px 0 8px;
   text-align: center;
   font-size: 11px;
   color: var(--muted);
@@ -1440,8 +1586,18 @@ footer a {
   .counter-main { font-size: 34px; margin: 0 0 4px; }
   .counter-sub > div { padding-top: 6px; }
   .counter-sub strong { font-size: 16px; }
-  .sbtn { padding: 5px 2px; }
-  footer { padding: 6px 0 4px; }
+  .sbtn { padding: 4px 2px; }
+  footer { padding: 4px 0 2px; }
+  main { gap: 5px; }
+  select { padding-top: 8px; padding-bottom: 8px; }
+  .store-link { margin-top: 5px; padding: 4px 10px; font-size: 11px; }
+  .store-actions { margin: 5px 0 7px; }
+  .store-actions .btn { padding: 7px 10px; }
+  .tab { padding: 6px 4px; }
+  .info { margin-top: 4px; }
+  .counter { padding: 12px 10px 6px; }
+  .counter-main { font-size: 30px; }
+  .panel { padding: 7px 10px; }
   footer { padding: 10px 0 6px; }
 }
 

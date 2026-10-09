@@ -4,6 +4,13 @@
 
 // ===== 基本設定 =====
 const PRIZE_UNIT = 500; // 景品の最小単位（円）
+const OTHER_MAX = 4;    // 「その他」の台の登録上限
+
+// 「その他」の台の種類
+const KINDS = {
+  pachi: { label: 'パチンコ', kind: 'パチ', unit: '玉', ratePh: '例 28' },
+  slot:  { label: 'スロット', kind: 'スロ', unit: '枚', ratePh: '例 11' }
+};
 
 // カウントアニメの設定
 const ANIM_MAX_MS = 3000;     // 最大時間（0→38,000円くらいでこの長さ）
@@ -25,9 +32,88 @@ const BUILTIN_STORES = [
     id: 'b_daitoyo_honten',
     name: '大東洋本店',
     builtin: true,
+    url: 'https://minpachi.com/newdaitoyo/',
     machines: {
       s20: { price: 21.73, rate: 5.2 }
-    }
+    },
+    others: []
+  },
+  {
+    id: 'b_daitoyo_umeda',
+    name: '大東洋 梅田店',
+    builtin: true,
+    url: 'https://minpachi.com/de-light/',
+    machines: {
+      p4: { price: 4, rate: 28 },
+      p1: { price: 1, rate: 112 },
+      s20: { price: 21.73, rate: 5.15 }
+    },
+    others: []
+  },
+  {
+    id: 'b_maruhan_umeda',
+    name: 'マルハン 梅田店',
+    builtin: true,
+    url: 'https://minpachi.com/maruhan-umeda/',
+    machines: {
+      p4: { price: 4, rate: 25.5 },
+      p1: { price: 1, rate: 102 },
+      s20: { price: 21.73, rate: 4.7 }
+    },
+    others: []
+  },
+  {
+    id: 'b_123n_osaka',
+    name: '123+N 大阪本店',
+    builtin: true,
+    url: 'https://minpachi.com/123plusn-osaka/',
+    machines: {
+      p4: { price: 4, rate: 28 },
+      s20: { price: 21.73, rate: 5.15 }
+    },
+    others: [
+      { kind: 'pachi', price: 1.25, rate: 89.6 },
+      { kind: 'slot', price: 6.66, rate: 16.8 }
+    ]
+  },
+  {
+    id: 'b_derde',
+    name: 'DERDE',
+    builtin: true,
+    url: 'https://minpachi.com/derde/',
+    machines: {
+      p4: { price: 4, rate: 28 },
+      p1: { price: 1, rate: 112 },
+      s20: { price: 21.73, rate: 5.15 }
+    },
+    others: []
+  },
+  {
+    id: 'b_am_toyonaka',
+    name: 'アムパチ～ノ 豊中店',
+    builtin: true,
+    url: 'https://minpachi.com/am-toyonaka/',
+    machines: {
+      p4: { price: 4, rate: 28 },
+      p1: { price: 1, rate: 112 },
+      s20: { price: 20, rate: 5.6 },
+      s5: { price: 5, rate: 22.4 }
+    },
+    others: [
+      { kind: 'slot', price: 10, rate: 11 }
+    ]
+  },
+  {
+    id: 'b_kicona_hankyutoyo',
+    name: 'キコーナ 阪急豊中店',
+    builtin: true,
+    url: 'https://minpachi.com/kicona-hankyutoyo/',
+    machines: {
+      p4: { price: 4, rate: 28 },
+      p1: { price: 1, rate: 112 },
+      s20: { price: 20, rate: 5.6 }
+    },
+    others: []
   }
 ];
 
@@ -35,6 +121,22 @@ const BUILTIN_STORES = [
 // type: 'feature' → 機能追加 / 'stores' → 店舗追加
 // id は一度決めたら変えない（既読管理に使う）
 const NEWS = [
+  {
+    id: '2026-10-09-feature-8',
+    type: 'feature',
+    date: '2026-10-09',
+    items: [
+      'マイホ登録の台に「その他」を追加（1.25円パチや10円スロなど、4つまで登録できます）',
+      '選んだ店のみんパチページを、店名から開けるように',
+      'マイホ登録に「みんパチのURL」の入力欄を追加（任意）'
+    ]
+  },
+  {
+    id: '2026-10-09-stores-2',
+    type: 'stores',
+    date: '2026-10-09',
+    stores: ['大東洋 梅田店', 'マルハン 梅田店', '123+N 大阪本店', 'DERDE', 'アムパチ～ノ 豊中店', 'キコーナ 阪急豊中店']
+  },
   {
     id: '2026-10-09-feature-7',
     type: 'feature',
@@ -129,7 +231,7 @@ const LS_TIP = 'kankin_compass_tip_seen_v1'; // コンパス案内を見たか
 const LS_A2HS = 'kankin_a2hs_dismissed_v1';   // ホーム画面追加のおすすめを閉じた日時
 const A2HS_SNOOZE_MS = 14 * 24 * 60 * 60 * 1000; // 閉じたら14日間は出さない
 const EXPORT_APP = 'kankin-calculator';
-const EXPORT_VERSION = 1;
+const EXPORT_VERSION = 2;
 
 // ===== 要素 =====
 const $ = function (id) { return document.getElementById(id); };
@@ -164,6 +266,12 @@ const tipModal = $('tipModal');
 const tipOpen = $('tipOpen');
 const tipCancel = $('tipCancel');
 const tipVisual = $('tipVisual');
+const storeLink = $('storeLink');
+const storeLinkName = $('storeLinkName');
+const fUrl = $('fUrl');
+const fOtherWrap = $('fOtherWrap');
+const fOthers = $('fOthers');
+const addOtherBtn = $('addOtherBtn');
 const a2hsBanner = $('a2hsBanner');
 const a2hsHow = $('a2hsHow');
 const a2hsClose = $('a2hsClose');
@@ -293,16 +401,40 @@ function isValidMachine(m) {
 }
 
 // 外部データ（保存データ・読み込みファイル）を安全な形に整える。不正ならnull
+// みんパチのURLだけ受け付ける（不正なら空文字）
+function sanitizeMinpachiUrl(str) {
+  let u = typeof str === 'string' ? str.trim().slice(0, 300) : '';
+  if (!u) return '';
+  u = u.replace(/[\uFF01-\uFF5E]/g, function (ch) { return String.fromCharCode(ch.charCodeAt(0) - 0xFEE0); });
+  if (!/^https?:\/\//i.test(u)) u = 'https://' + u;
+  try {
+    const p = new URL(u);
+    if (p.protocol !== 'https:' && p.protocol !== 'http:') return '';
+    const host = p.hostname.toLowerCase();
+    if (host !== 'minpachi.com' && host !== 'www.minpachi.com') return '';
+    return 'https://minpachi.com' + p.pathname + p.search;
+  } catch (e) {
+    return '';
+  }
+}
+
+function sanitizeOther(o) {
+  if (!o || typeof o !== 'object' || !KINDS.hasOwnProperty(o.kind)) return null;
+  const fixed = { kind: o.kind, price: parsePositive(o.price), rate: parsePositive(o.rate) };
+  return isValidMachine(fixed) ? fixed : null;
+}
+
+// 外部データ（保存データ・読み込みファイル）を安全な形に整える。不正ならnull
 function sanitizeStore(raw) {
   if (!raw || typeof raw !== 'object') return null;
   const name = typeof raw.name === 'string' ? raw.name.trim().slice(0, 30) : '';
   if (!name) return null;
-  if (!raw.machines || typeof raw.machines !== 'object') return null;
 
+  const src = raw.machines && typeof raw.machines === 'object' ? raw.machines : {};
   const machines = {};
   let count = 0;
   TYPES.forEach(function (t) {
-    const m = raw.machines[t.key];
+    const m = src[t.key];
     if (!m || typeof m !== 'object') return;
     const fixed = { price: parsePositive(m.price), rate: parsePositive(m.rate) };
     if (isValidMachine(fixed)) {
@@ -310,13 +442,36 @@ function sanitizeStore(raw) {
       count++;
     }
   });
-  if (count === 0) return null;
+
+  const others = [];
+  if (Array.isArray(raw.others)) {
+    raw.others.forEach(function (o) {
+      if (others.length >= OTHER_MAX) return;
+      const f = sanitizeOther(o);
+      if (f) others.push(f);
+    });
+  }
+  if (count + others.length === 0) return null;
 
   return {
     id: typeof raw.id === 'string' && raw.id ? raw.id : newId(),
     name: name,
     builtin: false,
-    machines: machines
+    url: sanitizeMinpachiUrl(raw.url),
+    machines: machines,
+    others: others
+  };
+}
+
+// 店舗データの複製（IDだけ差し替え）
+function storeCopy(s, id) {
+  return {
+    id: id,
+    name: s.name,
+    builtin: false,
+    url: s.url || '',
+    machines: s.machines,
+    others: s.others || []
   };
 }
 
@@ -422,8 +577,41 @@ function currentStore() {
   return list[0];
 }
 
-function availableTypes(store) {
-  return TYPES.filter(function (t) { return isValidMachine(store.machines[t.key]); });
+// 店舗の台の一覧（固定の4種＋その他）。パチ→スロの順、それぞれ料金の高い順
+function entriesOf(store) {
+  const list = [];
+  const machines = store.machines || {};
+  TYPES.forEach(function (t) {
+    const m = machines[t.key];
+    if (!isValidMachine(m)) return;
+    list.push({ key: t.key, label: t.label, short: t.short, kind: t.kind, unit: t.unit, price: m.price, rate: m.rate });
+  });
+  (store.others || []).forEach(function (o, i) {
+    const k = KINDS[o.kind];
+    if (!k || !isValidMachine(o)) return;
+    list.push({
+      key: 'o' + i,
+      label: fmt(o.price) + '円' + k.label,
+      short: fmt(o.price) + k.kind,
+      kind: k.kind,
+      unit: k.unit,
+      price: o.price,
+      rate: o.rate
+    });
+  });
+  list.sort(function (a, b) {
+    if (a.kind !== b.kind) return a.kind === 'パチ' ? -1 : 1;
+    return b.price - a.price;
+  });
+  return list;
+}
+
+function currentEntry() {
+  const list = entriesOf(currentStore());
+  for (let i = 0; i < list.length; i++) {
+    if (list[i].key === state.typeKey) return list[i];
+  }
+  return list[0] || null;
 }
 
 // ============================================================
@@ -461,29 +649,43 @@ function renderActions() {
   const store = currentStore();
   editBtn.classList.toggle('hidden', store.builtin);
   delBtn.classList.toggle('hidden', store.builtin);
+  renderStoreLink();
+}
+
+// 選んだ店のみんパチページへのリンク（URLがある店だけ）
+function renderStoreLink() {
+  const store = currentStore();
+  const url = store.url || '';
+  storeLink.classList.toggle('hidden', !url);
+  if (url) {
+    storeLink.href = url;
+    storeLinkName.textContent = store.name;
+    storeLink.setAttribute('aria-label', store.name + 'のみんパチページを開く');
+  }
 }
 
 function renderTabs() {
-  const store = currentStore();
-  const types = availableTypes(store);
+  const list = entriesOf(currentStore());
+  if (list.length === 0) return;
 
-  if (!types.some(function (t) { return t.key === state.typeKey; })) {
-    state.typeKey = types[0].key;
+  if (!list.some(function (en) { return en.key === state.typeKey; })) {
+    state.typeKey = list[0].key;
   }
 
   typeTabs.innerHTML = '';
-  typeTabs.style.gridTemplateColumns = 'repeat(' + types.length + ', 1fr)';
+  typeTabs.classList.toggle('many', list.length > 4);
 
-  types.forEach(function (t) {
+  list.forEach(function (en) {
     const b = document.createElement('button');
     b.type = 'button';
-    b.className = 'tab' + (t.key === state.typeKey ? ' active' : '');
-    b.textContent = t.short;
+    b.className = 'tab' + (en.key === state.typeKey ? ' active' : '');
+    b.textContent = en.short;
     b.setAttribute('role', 'tab');
-    b.setAttribute('aria-selected', t.key === state.typeKey ? 'true' : 'false');
+    b.setAttribute('aria-selected', en.key === state.typeKey ? 'true' : 'false');
+    b.setAttribute('aria-label', en.label);
     b.addEventListener('click', function () {
-      if (state.typeKey === t.key) return;
-      state.typeKey = t.key;
+      if (state.typeKey === en.key) return;
+      state.typeKey = en.key;
       saveState();
       renderTabs();
       renderMeta();
@@ -491,20 +693,26 @@ function renderTabs() {
     });
     typeTabs.appendChild(b);
   });
+
+  // タブが多くて横スクロールする時は、選んでいるタブが見える位置へ
+  const active = typeTabs.querySelector('.tab.active');
+  if (active && typeTabs.scrollWidth > typeTabs.clientWidth) {
+    typeTabs.scrollLeft = active.offsetLeft - (typeTabs.clientWidth - active.offsetWidth) / 2;
+  } else {
+    typeTabs.scrollLeft = 0;
+  }
 }
 
 // 現在の店舗・台の情報表示（ラベル・交換率など）
 function renderMeta() {
-  const store = currentStore();
-  const t = typeOf(state.typeKey);
-  const m = store.machines[state.typeKey];
-  if (!t || !isValidMachine(m)) return;
+  const en = currentEntry();
+  if (!en) return;
 
-  const per = unitMedals(m.rate);
-  medalsLabel.textContent = '今の持ち' + (t.unit === '玉' ? '玉数' : 'メダル枚数');
+  const per = unitMedals(en.rate);
+  medalsLabel.textContent = '今の持ち' + (en.unit === '玉' ? '玉数' : 'メダル枚数');
   medalsEl.placeholder = '例：' + (per * 20 + Math.round(per / 2));
-  infoEl.textContent = fmt(m.price) + '円' + t.kind + '・' + fmt(m.rate) + t.unit + '交換・1' + t.unit + '≈' + (100 / m.rate).toFixed(2) + '円';
-  noteEl.textContent = PRIZE_UNIT + '円 = ' + per + t.unit + '単位';
+  infoEl.textContent = fmt(en.price) + '円' + en.kind + '・' + fmt(en.rate) + en.unit + '交換・1' + en.unit + '≈' + (100 / en.rate).toFixed(2) + '円';
+  noteEl.textContent = PRIZE_UNIT + '円 = ' + per + en.unit + '単位';
 }
 
 // 入力欄の状態（×ボタン・未計算の光り）
@@ -575,19 +783,17 @@ function animateYen(target) {
 
 // animate: true＝計算ボタン押下（設定ONならアニメ）/ false＝即表示
 function runCalc(animate) {
-  const store = currentStore();
-  const t = typeOf(state.typeKey);
-  const m = store.machines[state.typeKey];
-  if (!t || !isValidMachine(m)) return;
+  const en = currentEntry();
+  if (!en) return;
 
-  const per = unitMedals(m.rate);
+  const per = unitMedals(en.rate);
   const n = parseMedals(medalsEl.value);
   const yen = Math.floor(n / per) * PRIZE_UNIT;
   const rest = n % per;
 
   // 余り・次の500円までは即切替
-  restEl.textContent = fmt(rest) + t.unit;
-  nextEl.textContent = n > 0 ? 'あと' + fmt(per - rest) + t.unit : '－';
+  restEl.textContent = fmt(rest) + en.unit;
+  nextEl.textContent = n > 0 ? 'あと' + fmt(per - rest) + en.unit : '－';
 
   if (animate && settings.anim) {
     animateYen(yen);
@@ -728,6 +934,8 @@ function onMinpachiClick(e) {
   saveDraft(); // 画面が切り替わっても続きから入力できるように
   if (!isStandalone() || tipSeen()) return; // 通常はそのまま開く
   e.preventDefault();
+  // 案内の「みんパチを開く」は、押したリンクと同じページを開く
+  tipOpen.href = (e.currentTarget && e.currentTarget.href) || 'https://minpachi.com/';
   openModal(tipModal); // 初回だけ案内を出してから開く
 }
 
@@ -830,20 +1038,166 @@ function openNews() {
 // ============================================================
 function buildChips() {
   fTypeChips.innerHTML = '';
-  TYPES.forEach(function (t) {
+  const items = TYPES.map(function (t) { return { key: t.key, label: t.label }; })
+    .concat([{ key: 'other', label: 'その他' }]);
+
+  items.forEach(function (it) {
     const b = document.createElement('button');
     b.type = 'button';
-    b.className = 'chip';
-    b.textContent = t.label;
-    b.setAttribute('aria-pressed', formSelected[t.key] ? 'true' : 'false');
+    b.className = 'chip' + (it.key === 'other' ? ' chip-other' : '');
+    b.textContent = it.label;
+    b.setAttribute('aria-pressed', formSelected[it.key] ? 'true' : 'false');
     b.addEventListener('click', function () {
-      formSelected[t.key] = !formSelected[t.key];
-      b.setAttribute('aria-pressed', formSelected[t.key] ? 'true' : 'false');
+      formSelected[it.key] = !formSelected[it.key];
+      b.setAttribute('aria-pressed', formSelected[it.key] ? 'true' : 'false');
       fErr.textContent = '';
       saveDraft();
     });
     fTypeChips.appendChild(b);
   });
+}
+
+// ===== 「その他」の台 =====
+function makeDetailField(labelNodes, input, unitEl) {
+  const field = document.createElement('label');
+  field.className = 'dfield';
+  const lab = document.createElement('span');
+  lab.className = 'dlabel';
+  labelNodes.forEach(function (n) { lab.appendChild(n); });
+  const box = document.createElement('span');
+  box.className = 'dinput';
+  box.appendChild(input);
+  box.appendChild(unitEl);
+  field.appendChild(lab);
+  field.appendChild(box);
+  return field;
+}
+
+function updateAddOtherBtn() {
+  addOtherBtn.classList.toggle('hidden', fOthers.children.length >= OTHER_MAX);
+}
+
+function addOtherBlock(data) {
+  if (fOthers.children.length >= OTHER_MAX) return null;
+  const d = data || {};
+  let kind = KINDS.hasOwnProperty(d.kind) ? d.kind : 'slot';
+
+  const block = document.createElement('div');
+  block.className = 'detail-block other-block';
+
+  // パチンコ／スロット切替と削除
+  const head = document.createElement('div');
+  head.className = 'other-head';
+  const seg = document.createElement('div');
+  seg.className = 'seg';
+  seg.setAttribute('role', 'group');
+  seg.setAttribute('aria-label', '台の種類');
+  const segBtns = {};
+  ['pachi', 'slot'].forEach(function (k) {
+    const sb = document.createElement('button');
+    sb.type = 'button';
+    sb.className = 'seg-btn';
+    sb.textContent = KINDS[k].label + '（' + KINDS[k].unit + '）';
+    sb.addEventListener('click', function () {
+      setKind(k);
+      fErr.textContent = '';
+      saveDraft();
+    });
+    segBtns[k] = sb;
+    seg.appendChild(sb);
+  });
+  const del = document.createElement('button');
+  del.type = 'button';
+  del.className = 'other-del';
+  del.textContent = '削除';
+  del.addEventListener('click', function () {
+    block.remove();
+    updateAddOtherBtn();
+    fErr.textContent = '';
+    saveDraft();
+  });
+  head.appendChild(seg);
+  head.appendChild(del);
+
+  // 遊技料金・交換率
+  const price = document.createElement('input');
+  price.type = 'text';
+  price.inputMode = 'decimal';
+  price.autocomplete = 'off';
+  price.placeholder = '例 1.25';
+  price.value = typeof d.price === 'string' ? d.price.slice(0, 12) : '';
+  price.dataset.role = 'price';
+  price.setAttribute('aria-label', 'その他の台の遊技料金');
+
+  const rate = document.createElement('input');
+  rate.type = 'text';
+  rate.inputMode = 'decimal';
+  rate.autocomplete = 'off';
+  rate.value = typeof d.rate === 'string' ? d.rate.slice(0, 12) : '';
+  rate.dataset.role = 'rate';
+  rate.setAttribute('aria-label', 'その他の台の交換率');
+
+  const prefix = document.createElement('span');
+  prefix.className = 'prefix';
+  const priceUnit = document.createElement('span');
+  priceUnit.textContent = '円';
+  const rateUnit = document.createElement('span');
+
+  const updatePrefix = function () {
+    const p = parsePositive(price.value);
+    prefix.textContent = (isNaN(p) ? '' : fmt(p)) + KINDS[kind].kind;
+  };
+
+  function setKind(k) {
+    kind = k;
+    block.dataset.kind = k;
+    segBtns.pachi.setAttribute('aria-pressed', k === 'pachi' ? 'true' : 'false');
+    segBtns.slot.setAttribute('aria-pressed', k === 'slot' ? 'true' : 'false');
+    rateUnit.textContent = KINDS[k].unit;
+    rate.placeholder = KINDS[k].ratePh;
+    updatePrefix();
+  }
+
+  price.addEventListener('input', function () { updatePrefix(); fErr.textContent = ''; });
+  rate.addEventListener('input', function () { fErr.textContent = ''; });
+
+  const grid = document.createElement('div');
+  grid.className = 'detail-grid';
+  grid.appendChild(makeDetailField([document.createTextNode('遊技料金')], price, priceUnit));
+  grid.appendChild(makeDetailField([
+    document.createTextNode('交換率（'),
+    prefix,
+    document.createTextNode('）')
+  ], rate, rateUnit));
+
+  block.appendChild(head);
+  block.appendChild(grid);
+  fOthers.appendChild(block);
+  setKind(kind);
+  updateAddOtherBtn();
+  return block;
+}
+
+function buildOthers(list) {
+  fOthers.innerHTML = '';
+  (list || []).forEach(function (o) {
+    addOtherBlock({ kind: o.kind, price: String(o.price), rate: String(o.rate) });
+  });
+  updateAddOtherBtn();
+}
+
+// フォーム上の「その他」の入力内容（文字列のまま）
+function readOthers() {
+  const blocks = fOthers.querySelectorAll('.other-block');
+  const out = [];
+  for (let i = 0; i < blocks.length; i++) {
+    out.push({
+      kind: blocks[i].dataset.kind,
+      price: blocks[i].querySelector('[data-role="price"]').value,
+      rate: blocks[i].querySelector('[data-role="rate"]').value
+    });
+  }
+  return out;
 }
 
 function buildDetails(store) {
@@ -946,6 +1300,9 @@ function setStep(step) {
     for (let i = 0; i < blocks.length; i++) {
       blocks[i].classList.toggle('hidden', !formSelected[blocks[i].dataset.key]);
     }
+    // 「その他」は一番下。選んでいて未入力なら1つ用意
+    fOtherWrap.classList.toggle('hidden', !formSelected.other);
+    if (formSelected.other && fOthers.children.length === 0) addOtherBlock(null);
   }
 
   formModal.querySelector('.sheet').scrollTop = 0;
@@ -957,16 +1314,19 @@ function openForm(store) {
   formTitle.textContent = store ? 'マイホを編集' : 'マイホ追加';
   saveBtn.textContent = store ? '変更を保存' : '保存';
   fName.value = store ? store.name : '';
+  fUrl.value = store && store.url ? store.url : '';
 
   formSelected = {};
   if (store) {
     TYPES.forEach(function (t) {
       if (isValidMachine(store.machines[t.key])) formSelected[t.key] = true;
     });
+    if (store.others && store.others.length > 0) formSelected.other = true;
   }
 
   buildChips();
   buildDetails(store);
+  buildOthers(store ? store.others : []);
   openModal(formModal);
   setStep(1);
 }
@@ -996,6 +1356,7 @@ function saveDraft() {
   }
   const selected = {};
   TYPES.forEach(function (t) { if (formSelected[t.key]) selected[t.key] = true; });
+  if (formSelected.other) selected.other = true;
 
   const draft = {
     v: 1,
@@ -1003,8 +1364,10 @@ function saveDraft() {
     editingId: editingId,
     step: formStep,
     name: fName.value,
+    url: fUrl.value,
     selected: selected,
-    values: values
+    values: values,
+    others: readOthers()
   };
   try {
     localStorage.setItem(LS_DRAFT, JSON.stringify(draft));
@@ -1048,10 +1411,12 @@ function restoreDraft() {
   openForm(store);
 
   fName.value = typeof d.name === 'string' ? d.name.slice(0, 30) : fName.value;
+  if (typeof d.url === 'string') fUrl.value = d.url.slice(0, 300);
 
   if (d.selected && typeof d.selected === 'object') {
     formSelected = {};
     TYPES.forEach(function (t) { if (d.selected[t.key] === true) formSelected[t.key] = true; });
+    if (d.selected.other === true) formSelected.other = true;
     buildChips();
   }
 
@@ -1068,7 +1433,20 @@ function restoreDraft() {
     }
   }
 
-  const hasSelected = TYPES.some(function (t) { return formSelected[t.key]; });
+  if (Array.isArray(d.others)) {
+    fOthers.innerHTML = '';
+    d.others.slice(0, OTHER_MAX).forEach(function (o) {
+      if (!o || typeof o !== 'object') return;
+      addOtherBlock({
+        kind: o.kind,
+        price: typeof o.price === 'string' ? o.price : '',
+        rate: typeof o.rate === 'string' ? o.rate : ''
+      });
+    });
+    updateAddOtherBtn();
+  }
+
+  const hasSelected = TYPES.some(function (t) { return formSelected[t.key]; }) || !!formSelected.other;
   setStep(d.step === 2 && fName.value.trim() && hasSelected ? 2 : 1);
   showToast('入力途中の内容を復元しました');
 }
@@ -1079,7 +1457,11 @@ function goNext() {
     fErr.textContent = '店舗名を入力してください。';
     return;
   }
-  const count = TYPES.filter(function (t) { return formSelected[t.key]; }).length;
+  if (fUrl.value.trim() && !sanitizeMinpachiUrl(fUrl.value)) {
+    fErr.textContent = 'みんパチのURLは「https://minpachi.com/〇〇/」の形で入力してください（空欄でもOK）。';
+    return;
+  }
+  const count = TYPES.filter(function (t) { return formSelected[t.key]; }).length + (formSelected.other ? 1 : 0);
   if (count === 0) {
     fErr.textContent = '設置している台を1つ以上選んでください。';
     return;
@@ -1096,10 +1478,18 @@ function submitForm() {
     return;
   }
 
+  const urlRaw = fUrl.value.trim();
+  const url = sanitizeMinpachiUrl(urlRaw);
+  if (urlRaw && !url) {
+    setStep(1);
+    fErr.textContent = 'みんパチのURLは「https://minpachi.com/〇〇/」の形で入力してください（空欄でもOK）。';
+    return;
+  }
+
+  // 固定の4種
   const machines = {};
   let count = 0;
   const blocks = fDetails.querySelectorAll('.detail-block');
-
   for (let i = 0; i < blocks.length; i++) {
     const key = blocks[i].dataset.key;
     if (!formSelected[key]) continue;
@@ -1120,7 +1510,31 @@ function submitForm() {
     count++;
   }
 
-  if (count === 0) {
+  // その他
+  const others = [];
+  if (formSelected.other) {
+    const list = readOthers();
+    for (let i = 0; i < list.length; i++) {
+      const label = 'その他（' + (i + 1) + 'つ目）';
+      const price = parsePositive(list[i].price);
+      const rate = parsePositive(list[i].rate);
+      if (isNaN(price) || price > 1000) {
+        fErr.textContent = label + 'の遊技料金を正しく入力してください。';
+        return;
+      }
+      if (isNaN(rate) || rate > 10000) {
+        fErr.textContent = label + 'の交換率を正しく入力してください。';
+        return;
+      }
+      others.push({ kind: KINDS.hasOwnProperty(list[i].kind) ? list[i].kind : 'slot', price: price, rate: rate });
+    }
+    if (others.length === 0) {
+      fErr.textContent = '「その他」の台を追加するか、1ページ目で「その他」の選択を外してください。';
+      return;
+    }
+  }
+
+  if (count + others.length === 0) {
     setStep(1);
     fErr.textContent = '設置している台を1つ以上選んでください。';
     return;
@@ -1128,15 +1542,16 @@ function submitForm() {
 
   const backup = customStores.slice();
   const isEdit = !!editingId;
+  const data = { name: name, url: url, machines: machines, others: others };
 
   if (isEdit) {
     customStores = customStores.map(function (s) {
-      return s.id === editingId ? { id: s.id, name: name, builtin: false, machines: machines } : s;
+      return s.id === editingId ? storeCopy(data, s.id) : s;
     });
     state.storeId = editingId;
   } else {
     const id = newId();
-    customStores.push({ id: id, name: name, builtin: false, machines: machines });
+    customStores.push(storeCopy(data, id));
     state.storeId = id;
   }
 
@@ -1232,7 +1647,7 @@ function exportData() {
     version: EXPORT_VERSION,
     exportedAt: new Date().toISOString(),
     stores: customStores.map(function (s) {
-      return { name: s.name, machines: s.machines };
+      return { name: s.name, url: s.url || '', machines: s.machines, others: s.others || [] };
     })
   };
 
@@ -1318,7 +1733,7 @@ function applyImport(mode) {
 
   if (mode === 'replace') {
     next = pendingImport.map(function (s) {
-      return { id: newId(), name: s.name, builtin: false, machines: s.machines };
+      return storeCopy(s, newId());
     });
     added = next.length;
   } else {
@@ -1330,13 +1745,13 @@ function applyImport(mode) {
       }
       if (idx >= 0) {
         if (mode === 'overwrite') {
-          next[idx] = { id: next[idx].id, name: s.name, builtin: false, machines: s.machines };
+          next[idx] = storeCopy(s, next[idx].id);
           updated++;
         } else {
           skipped++;
         }
       } else {
-        next.push({ id: newId(), name: s.name, builtin: false, machines: s.machines });
+        next.push(storeCopy(s, newId()));
         added++;
       }
     });
@@ -1422,6 +1837,16 @@ editBtn.addEventListener('click', function () {
 delBtn.addEventListener('click', deleteCurrent);
 
 cancelBtn.addEventListener('click', closeForm);
+addOtherBtn.addEventListener('click', function () {
+  const b = addOtherBlock(null);
+  fErr.textContent = '';
+  saveDraft();
+  if (b) {
+    const first = b.querySelector('[data-role="price"]');
+    if (b.scrollIntoView) b.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    if (first) first.focus();
+  }
+});
 nextBtn.addEventListener('click', goNext);
 backBtn.addEventListener('click', function () { setStep(1); });
 saveBtn.addEventListener('click', submitForm);
