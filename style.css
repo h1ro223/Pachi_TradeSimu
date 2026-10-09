@@ -507,10 +507,39 @@ select {
   font-size: 12px;
 }
 
+.tab {
+  position: relative;
+  z-index: 1;
+  transition: color 0.2s;
+}
+
 .tab.active {
   color: #1a1305;
+}
+
+/* 選択中の台のハイライト（横に滑って移動） */
+.tab-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  z-index: 0;
   background: var(--gold);
+  border-radius: 9px;
   box-shadow: 0 0 12px rgba(255, 205, 60, 0.45);
+  pointer-events: none;
+  transition:
+    transform 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+    width 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* 設定でアニメーションOFFの時 */
+.anim-off .tab,
+.anim-off .tab-indicator,
+.anim-off .seg-btn,
+.anim-off .seg-indicator {
+  transition: none;
 }
 
 .info {
@@ -909,7 +938,9 @@ select {
 }
 
 .seg {
-  display: inline-flex;
+  position: relative;
+  display: inline-grid;
+  grid-template-columns: 1fr 1fr;
   padding: 3px;
   background: var(--panel);
   border: 1px solid var(--line);
@@ -926,11 +957,30 @@ select {
   border: none;
   border-radius: 8px;
   cursor: pointer;
+  position: relative;
+  z-index: 1;
+  transition: color 0.2s;
 }
 
 .seg-btn[aria-pressed="true"] {
   color: #1a1305;
+}
+
+/* パチンコ／スロットのハイライト（横に滑って移動） */
+.seg-indicator {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  width: calc(50% - 3px);
   background: var(--gold);
+  border-radius: 8px;
+  pointer-events: none;
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.seg-indicator.right {
+  transform: translateX(100%);
 }
 
 .seg-btn:focus-visible,
@@ -1154,9 +1204,18 @@ select {
   cursor: zoom-out;
 }
 
+/* PCは開いた時に画面に収まる大きさ。クリックでもう一段大きく */
 @media (min-width: 900px) {
+  .zoom-scroll img {
+    width: auto;
+    max-width: 100%;
+    max-height: 100%;
+  }
+
   .zoom-scroll.large img {
-    width: 2400px;
+    width: min(140vw, 2600px);
+    max-width: none;
+    max-height: none;
   }
 }
 

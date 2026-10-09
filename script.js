@@ -13,8 +13,8 @@ const KINDS = {
 };
 
 // カウントアニメの設定
-const ANIM_MAX_MS = 3000;     // 最大時間（0→38,000円くらいでこの長さ）
-const ANIM_MIN_MS = 800;      // 最小時間
+const ANIM_MAX_MS = 2000;     // 最大時間（0→38,000円くらいでこの長さ）
+const ANIM_MIN_MS = 600;      // 最小時間
 const ANIM_REF_DIFF = 38000;  // この金額差で最大時間になる
 
 // 台の種類（並び順＝画面の表示順。みんパチに合わせて料金の高い順）
@@ -151,8 +151,7 @@ const NEWS = [
     type: 'feature',
     date: '2026-10-09',
     items: [
-      'ホーム画面アプリで使うとき、みんパチをSafariアプリで開き直す方法（右下のコンパスマーク）を案内',
-      '効果がなかった「みんパチを開くブラウザ」の設定を削除'
+      'ホーム画面アプリで使うとき、みんパチをSafariアプリで開き直す方法（右下のコンパスマーク）を案内'
     ]
   },
   {
@@ -161,7 +160,6 @@ const NEWS = [
     date: '2026-10-09',
     items: [
       'マイホ登録の入力途中の内容を自動保存（みんパチから戻っても続きから入力できます）',
-      'みんパチを開くブラウザを設定で選択（標準／Safari／Chrome／Brave）',
       '登録フォーム2ページ目にも「みんパチを開く」ボタンを追加'
     ]
   },
@@ -173,7 +171,6 @@ const NEWS = [
       'マイホ登録ガイドの画像を追加（タップで拡大）',
       '交換情報の入力欄を1行にまとめて見やすく',
       '枚数の増減ボタン（±1・±10・±100・±1000）',
-      'カウントアニメを最大3秒に短縮',
       'サイトのアイコンを追加（ホーム画面に追加した時のアイコンも）'
     ]
   },
@@ -182,8 +179,6 @@ const NEWS = [
     type: 'feature',
     date: '2026-10-09',
     items: [
-      '計算ボタン（押したときに結果が出るように）',
-      '金額のカウントアニメ（設定でON/OFF）',
       '設定画面（右上の⚙️）。書き出し・読み込みは設定に移動',
       'スマホ1画面に収まるよう表示をコンパクトに',
       '台の並び順をみんパチと同じ順（4パチ→1パチ→20スロ→5スロ）に'
@@ -267,6 +262,9 @@ const tipOpen = $('tipOpen');
 const tipCancel = $('tipCancel');
 const tipVisual = $('tipVisual');
 const storeLink = $('storeLink');
+const tabIndicator = document.createElement('span');
+tabIndicator.className = 'tab-indicator';
+tabIndicator.setAttribute('aria-hidden', 'true');
 const storeLinkName = $('storeLinkName');
 const fUrl = $('fUrl');
 const fOtherWrap = $('fOtherWrap');
@@ -664,7 +662,7 @@ function renderStoreLink() {
   }
 }
 
-function renderTabs() {
+function renderTabs(slide) {
   const list = entriesOf(currentStore());
   if (list.length === 0) return;
 
@@ -672,7 +670,10 @@ function renderTabs() {
     state.typeKey = list[0].key;
   }
 
-  typeTabs.innerHTML = '';
+  // タブだけ作り直す（ハイライトは残して前の位置から滑らせる）
+  const oldTabs = typeTabs.querySelectorAll('.tab');
+  for (let i = 0; i < oldTabs.length; i++) oldTabs[i].remove();
+  if (!tabIndicator.parentNode) typeTabs.appendChild(tabIndicator);
   typeTabs.classList.toggle('many', list.length > 4);
 
   list.forEach(function (en) {
@@ -687,7 +688,7 @@ function renderTabs() {
       if (state.typeKey === en.key) return;
       state.typeKey = en.key;
       saveState();
-      renderTabs();
+      renderTabs(true);
       renderMeta();
       runCalc(false); // 台の切替はアニメなしで即表示
     });
@@ -696,10 +697,32 @@ function renderTabs() {
 
   // タブが多くて横スクロールする時は、選んでいるタブが見える位置へ
   const active = typeTabs.querySelector('.tab.active');
+  const smooth = !!slide && settings.anim;
   if (active && typeTabs.scrollWidth > typeTabs.clientWidth) {
-    typeTabs.scrollLeft = active.offsetLeft - (typeTabs.clientWidth - active.offsetWidth) / 2;
+    const left = active.offsetLeft - (typeTabs.clientWidth - active.offsetWidth) / 2;
+    if (smooth && typeTabs.scrollTo) typeTabs.scrollTo({ left: left, behavior: 'smooth' });
+    else typeTabs.scrollLeft = left;
   } else {
     typeTabs.scrollLeft = 0;
+  }
+  positionTabIndicator(smooth);
+}
+
+// ハイライトを選択中のタブの位置へ（animate=falseなら瞬間移動）
+function positionTabIndicator(animate) {
+  const active = typeTabs.querySelector('.tab.active');
+  if (!active) {
+    tabIndicator.style.opacity = '0';
+    return;
+  }
+  if (!animate) tabIndicator.style.transition = 'none';
+  tabIndicator.style.opacity = '1';
+  tabIndicator.style.width = active.offsetWidth + 'px';
+  tabIndicator.style.height = active.offsetHeight + 'px';
+  tabIndicator.style.transform = 'translate(' + active.offsetLeft + 'px, ' + active.offsetTop + 'px)';
+  if (!animate) {
+    void tabIndicator.offsetWidth; // 位置を確定させてから元に戻す
+    tabIndicator.style.transition = '';
   }
 }
 
@@ -840,6 +863,7 @@ function closeModal(el) {
 // ============================================================
 function renderSettings() {
   animToggle.setAttribute('aria-checked', settings.anim ? 'true' : 'false');
+  document.body.classList.toggle('anim-off', !settings.anim);
 }
 
 // ============================================================
@@ -1093,13 +1117,17 @@ function addOtherBlock(data) {
   seg.setAttribute('role', 'group');
   seg.setAttribute('aria-label', '台の種類');
   const segBtns = {};
+  const segInd = document.createElement('span');
+  segInd.className = 'seg-indicator';
+  segInd.setAttribute('aria-hidden', 'true');
+  seg.appendChild(segInd);
   ['pachi', 'slot'].forEach(function (k) {
     const sb = document.createElement('button');
     sb.type = 'button';
     sb.className = 'seg-btn';
     sb.textContent = KINDS[k].label + '（' + KINDS[k].unit + '）';
     sb.addEventListener('click', function () {
-      setKind(k);
+      setKind(k, true);
       fErr.textContent = '';
       saveDraft();
     });
@@ -1148,9 +1176,16 @@ function addOtherBlock(data) {
     prefix.textContent = (isNaN(p) ? '' : fmt(p)) + KINDS[kind].kind;
   };
 
-  function setKind(k) {
+  function setKind(k, animate) {
     kind = k;
     block.dataset.kind = k;
+    // ハイライトを滑らせる（初期表示や設定OFFの時は瞬間移動）
+    if (!animate || !settings.anim) segInd.style.transition = 'none';
+    segInd.classList.toggle('right', k === 'slot');
+    if (!animate || !settings.anim) {
+      void segInd.offsetWidth;
+      segInd.style.transition = '';
+    }
     segBtns.pachi.setAttribute('aria-pressed', k === 'pachi' ? 'true' : 'false');
     segBtns.slot.setAttribute('aria-pressed', k === 'slot' ? 'true' : 'false');
     rateUnit.textContent = KINDS[k].unit;
@@ -1599,7 +1634,9 @@ function showGuideImage() {
 // ===== ガイド画像の拡大表示 =====
 function openZoom() {
   if (!guideImg.complete || guideImg.naturalWidth === 0) return;
-  zoomScroll.classList.add('large');
+  // スマホは大きく、PCは画面に収まる大きさで開く
+  const wide = window.matchMedia && window.matchMedia('(min-width: 900px)').matches;
+  zoomScroll.classList.toggle('large', !wide);
   openModal(zoomModal);
   zoomScroll.scrollLeft = 0;
   zoomScroll.scrollTop = 0;
@@ -1931,7 +1968,7 @@ animToggle.addEventListener('click', function () {
     // OFFにしたらアニメ途中の数字をすぐ確定
     runCalc(false);
   }
-  showToast('カウントアニメを' + (settings.anim ? 'ON' : 'OFF') + 'にしました');
+  showToast('アニメーションを' + (settings.anim ? 'ON' : 'OFF') + 'にしました');
 });
 
 exportBtn.addEventListener('click', exportData);
@@ -1952,6 +1989,7 @@ impCancel.addEventListener('click', function () {
 guideImg.addEventListener('error', showGuideFallback);
 guideImg.addEventListener('load', showGuideImage);
 guideZoomBtn.addEventListener('click', openZoom);
+window.addEventListener('resize', function () { positionTabIndicator(false); });
 zoomClose.addEventListener('click', closeZoom);
 zoomImg.addEventListener('click', toggleZoom);
 zoomScroll.addEventListener('click', function (e) {
